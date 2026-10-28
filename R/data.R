@@ -20,6 +20,9 @@ yahoo_download <- function(tickers, start) {
   if (!any(ok))
     return(matrix(NA_real_, 0, length(tickers), dimnames = list(NULL, tickers)))
   merged <- do.call(xts::merge.xts, c(cols[ok], list(all = TRUE)))
+  # quantmod returns all-NA rows on exchange holidays (e.g. 25 December) that
+  # yfinance omits; drop them so they are not forward-filled into zero returns.
+  merged <- merged[rowSums(!is.na(merged)) > 0, , drop = FALSE]
   m <- matrix(NA_real_, nrow(merged), length(tickers),
               dimnames = list(format(zoo::index(merged)), tickers))
   m[, colnames(merged)] <- zoo::coredata(merged)

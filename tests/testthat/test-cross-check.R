@@ -23,7 +23,7 @@ for (label in c("trivial", "tight")) {
         max_ratio_portfolio(R, J$level, B$lo, B$hi, J$rf_h)
       }
       e <- B[[kind]]
-      expect_equal(unname(p$w), e$w, tolerance = 1e-5)
+      expect_lt(max(abs(unname(p$w) - e$w)), 1e-5)
       expect_close(p$ret, e$ret)
       expect_close(p$es, e$es)
       expect_close(p$ratio, e$ratio)

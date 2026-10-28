@@ -16,6 +16,7 @@ import json
 from pathlib import Path
 
 import matplotlib
+import numpy as np
 
 matplotlib.use('Agg')
 
@@ -55,7 +56,7 @@ def main():
     logret = logret.rename(columns=ns['NAMES']).rename_axis(columns=None)
     names = list(logret.columns)
     level, n_frontier = ns['ES_LEVEL'], ns['N_FRONTIER']
-    rf_h = 0.0
+    rf_h = float(np.exp(ns['RISK_FREE'] * ns['HORIZON_DAYS'] / 252) - 1)
     scenarios = ns['simulate_horizon_returns'](logret, ns['HORIZON_DAYS'], ns['N_SCENARIOS'],
                                                ns['SIM_RNG'])
     scenarios.to_csv(OUT / 'python_scenarios.csv', index=False, float_format='%.12g')

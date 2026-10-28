@@ -80,3 +80,22 @@ test_that("get_prices_and_logret forward-fills and errors on empty", {
   expect_error(capture.output(get_prices_and_logret(c("A", "B"), cache_dir = new_cache(),
                                                     downloader = empty)), "no usable data")
 })
+
+test_that("yahoo_download drops all-NA holiday rows before they reach prices/logret", {
+  holiday <- "2024-01-05"
+  fake_getSymbols <- function(t, ...) {
+    d <- as.Date(dates10)
+    x <- xts::xts(cbind(seq_along(d) + if (t == "A") 100 else 50), order.by = d)
+    x[holiday, 1] <- NA
+    colnames(x) <- paste0(t, ".Adjusted")
+    x
+  }
+  testthat::local_mocked_bindings(getSymbols = fake_getSymbols, .package = "quantmod")
+  m <- yahoo_download(c("A", "B"), "2024-01-01")
+  expect_false(holiday %in% rownames(m))
+  expect_equal(nrow(m), 9)
+  res <- get_prices_and_logret(c("A", "B"), cache_dir = new_cache(), downloader = yahoo_download)
+  expect_false(holiday %in% rownames(res$prices))
+  expect_false(holiday %in% rownames(res$logret))
+  expect_true(all(res$logret != 0))
+})

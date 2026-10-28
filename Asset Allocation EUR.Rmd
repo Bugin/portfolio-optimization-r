@@ -4,10 +4,12 @@ output:
   html_document:
     toc: true
     theme: default
+    mathjax: null
 ---
 
 ```{r setup, include = FALSE}
 knitr::opts_chunk$set(message = FALSE, warning = FALSE)
+suppressMessages(loadNamespace("quantmod"))  # S3 registration notes, not output
 ```
 
 Portfolio choice across four euro-denominated asset classes — government
@@ -198,7 +200,7 @@ ggplot2::ggsave("figures/frontier.png", p_frontier, width = 9, height = 6, dpi =
 level_pct <- format(ES_LEVEL * 100)  # "95", "97.5"
 cat(sprintf("Sample: %s to %s, %d daily returns, %d assets | horizon %d days, %s scenarios\n",
             rownames(prices)[1], rownames(prices)[nrow(prices)], nrow(logret), ncol(prices),
-            HORIZON_DAYS, format(N_SCENARIOS, big.mark = ",")))
+            HORIZON_DAYS, formatC(N_SCENARIOS, format = "d", big.mark = ",")))
 cat(sprintf("Min-ES:     E[R]=%.2f%%  ES%s=%.2f%%  ratio=%.3f\n",
             100 * min_es$ret, level_pct, 100 * min_es$es, min_es$ratio))
 cat(sprintf("Max-ratio:  E[R]=%.2f%%  ES%s=%.2f%%  ratio=%.3f\n",
