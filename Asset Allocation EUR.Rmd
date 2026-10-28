@@ -1,0 +1,230 @@
+---
+title: "Asset Allocation EUR — simulation and Expected Shortfall"
+output:
+  html_document:
+    toc: true
+    theme: default
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(message = FALSE, warning = FALSE)
+```
+
+Portfolio choice across four euro-denominated asset classes — government
+bonds, investment-grade and high-yield corporate bonds and European equity —
+each represented by a UCITS ETF quoted on Xetra, with daily prices from
+Yahoo Finance (downloaded with `quantmod`). Prices are adjusted for
+distributions, so each series is a proxy for the total-return index of its
+asset class.
+
+This notebook is an R translation of the Python reference implementation in
+[Bugin/portfolio-optimization](https://github.com/Bugin/portfolio-optimization);
+the methods are the same, while the simulated numbers differ within Monte
+Carlo error because the two languages use different random number generators.
+
+The pipeline:
+
+1. download adjusted close prices (cached on disk) and compute daily log
+   returns;
+2. bootstrap whole historical days over `HORIZON_DAYS` business days,
+   `N_SCENARIOS` times, to obtain the joint distribution of the four asset
+   returns at the horizon;
+3. measure risk by the **Expected Shortfall** (ES) at `ES_LEVEL`;
+4. solve the **minimum-ES** portfolio, the **maximum return/ES ratio**
+   portfolio and the **mean–ES frontier** exactly by linear programming;
+5. draw a cloud of random portfolios to picture the feasible region;
+6. show the distributions of the simulated returns at the horizon.
+
+Conventions: returns are simple returns over the horizon; portfolios are
+buy-and-hold, with no rebalancing within the horizon; ES is reported as a
+positive number, a loss; the risk-free rate is a fixed annual constant (zero
+here) converted to the horizon; the minimum and maximum weight of each asset
+class are set in `BOUNDS`. Days are resampled independently, each with the
+full historical cross-section, so correlations, fat tails and skew are those
+of the sample, while serial dependence is not modelled. The random cloud is
+only illustrative: the optimal portfolios come from the linear programs.
+
+## Setup
+
+The code lives in the `R/` folder, one file per section of this notebook;
+`R/all.R` sources them in order. The packages used are `quantmod` (data),
+`Matrix` and `highs` (linear programs), `ggplot2`, `ggrepel` and `scales`
+(charts) and `jsonlite` (cache metadata).
+
+```{r source}
+source("R/all.R")
+```
+
+### Parameters
+
+All parameters are defined in `R/params.R`. `BOUNDS` sets the minimum and
+maximum weight of each asset class and is restated below so it can be edited
+here; assets not listed get `c(0, 1)`, and the bounds are validated when the
+Run chunk starts. After changing anything, re-knit the notebook from the top.
+The random generators are seeded inside the simulation and the cloud
+(`SIM_SEED`, `CLOUD_SEED`), so re-running the Run chunk reproduces the same
+scenarios.
+
+```{r parameters}
+# Minimum and maximum weight per asset class (fraction of the portfolio).
+# Assets not listed get c(0, 1).
+BOUNDS <- list("Euro Govt"     = c(0, 1),
+               "Euro Corp IG"  = c(0, 1),
+               "Euro Corp HY"  = c(0, 1),
+               "Europe Equity" = c(0, 1))
+
+# The other parameters, as defined in R/params.R.
+str(list(NAMES = NAMES, START_DATE = START_DATE, HORIZON_DAYS = HORIZON_DAYS,
+         N_SCENARIOS = N_SCENARIOS, ES_LEVEL = ES_LEVEL, N_RANDOM = N_RANDOM,
+         DIRICHLET_ALPHA = DIRICHLET_ALPHA, N_FRONTIER = N_FRONTIER,
+         RISK_FREE = RISK_FREE, SIM_SEED = SIM_SEED, CLOUD_SEED = CLOUD_SEED,
+         CACHE_DIR = CACHE_DIR, CACHE_TTL_HOURS = CACHE_TTL_HOURS))
+```
+
+## Data
+
+Prices are cached on disk as RDS files, keyed by universe and start date
+(`R/data.R`). Lookup order: fresh cache → download → stale cache → error.
+
+Two rules keep the cache trustworthy:
+
+- **Always refetch the full history, never append.** Yahoo restates the whole
+  adjusted series after every dividend or split, so appending new rows to old
+  ones would splice two different adjustment bases.
+- **Only a complete download overwrites the cache.** A partial download must
+  not turn a transient failure into a permanent one.
+
+Series are aligned on common dates, so the sample starts at the youngest
+listing in the universe (the high-yield ETF, December 2010).
+
+## Simulation
+
+Bootstrap (`simulate_horizon_returns`, `R/simulation.R`): whole historical
+days are resampled with replacement, so the cross-section of the four assets
+is preserved exactly as observed. Days are drawn independently. The simple
+return at the horizon is `exp(sum of the daily log returns) - 1`.
+
+## Portfolio metrics
+
+The portfolio return in each scenario is the weighted sum of the asset returns
+(buy-and-hold over the horizon). Expected shortfall (ES) at level alpha is the
+mean loss over the worst (1 - alpha) share of scenarios, reported as a positive
+number; when that share is not a whole number of scenarios the boundary
+scenario is weighted fractionally, so the value equals the linear-programming
+optimum exactly. The ratio of the expected excess return to the ES of the
+excess returns is the analogue of the Sharpe ratio (`R/metrics.R`).
+
+## Optimisation
+
+By Rockafellar and Uryasev, the ES at level alpha equals the minimum over zeta
+of zeta + mean(max(L - zeta, 0)) / (1 - alpha), where L is the loss in each
+scenario. Adding auxiliary variables u_s >= max(L_s - zeta, 0) turns this into
+a linear program in (w, zeta, u), which HiGHS (the `highs` package) solves
+exactly. The budget constraint sum(w) = 1, the per-asset bounds and an optional
+minimum expected return are all linear in w (`R/optimisation.R`).
+
+The max-ratio portfolio is found with a single LP: the ES of excess returns is
+positively homogeneous in the weights, so the budget constraint can be replaced
+by a normalisation of the expected excess return, and the per-asset bounds
+become homogeneous linear constraints. Two preconditions are checked, each
+stopping with an error: some feasible portfolio must have a positive expected
+excess return, and the optimal ES of excess returns must be positive
+(otherwise the ratio is unbounded).
+
+The efficient frontier is the set of min-ES portfolios for a grid of target
+returns, from the return of the min-ES portfolio up to 0.999 times the maximum
+attainable return under the bounds. Infeasible targets are skipped with a
+`[frontier]` message.
+
+## Random portfolios
+
+Random weights are drawn from a Dirichlet distribution, shifted so that the
+lower bounds hold by construction, and rejected when they break an upper bound
+(`R/cloud.R`). Each portfolio is evaluated on all scenarios. If fewer than 5 %
+of the first draw satisfy the bounds, a `[cloud]` message says so and the cloud
+stays small. The cloud only illustrates the feasible region: the optima come
+from the LPs.
+
+## Plot
+
+The chart (`plot_frontier`, `R/plots.R`) shows the random cloud, the min-ES
+frontier, the single assets, the two optimal portfolios and the allocation line
+from the risk-free point through the max-ratio portfolio, in the (ES, expected
+return) plane at the horizon. Beyond the max-ratio point the line would require
+borrowing at the risk-free rate: it is shown for reference only, since the
+optimisation is fully invested without leverage. A riskless return `rf_h` has
+Expected Shortfall `−rf_h`, so the risk-free point sits at `(−rf_h, rf_h)` (at
+zero for `RISK_FREE = 0`). Single assets are plotted as reference points even
+when a 100 % position lies outside `BOUNDS`.
+
+## Distributions at the horizon
+
+Simulated returns at the horizon for each asset and for the two optimal
+portfolios. The table gives moments and tail measures; the histograms carry a
+normal fit, so the fat tails inherited from the bootstrap are visible. The
+tail columns are named after `ES_LEVEL` (`var_95`, `es_95` at 95 %): `var_95`
+is a quantile of returns, usually negative, while `es_95` is a positive loss.
+
+## Run
+
+Download, simulate, optimise and plot, using the parameters above.
+
+```{r run, message = TRUE, fig.width = 9, fig.height = 6}
+data <- get_prices_and_logret(TICKERS)
+prices <- data$prices
+logret <- data$logret
+colnames(logret) <- unname(NAMES[colnames(logret)])  # asset-class labels from here on
+b <- check_bounds(BOUNDS, colnames(logret))
+lo <- b$lo
+hi <- b$hi
+rf_h <- exp(RISK_FREE * HORIZON_DAYS / 252) - 1
+
+scenarios <- simulate_horizon_returns(logret, HORIZON_DAYS, N_SCENARIOS, SIM_SEED)
+asset_ret <- colMeans(scenarios)
+asset_es <- apply(scenarios, 2, expected_shortfall, level = ES_LEVEL)
+
+rand <- sample_random_portfolios(scenarios, ES_LEVEL, lo, hi, N_RANDOM, DIRICHLET_ALPHA, CLOUD_SEED)
+min_es <- min_es_portfolio(scenarios, ES_LEVEL, lo, hi, rf_h)
+max_ratio <- max_ratio_portfolio(scenarios, ES_LEVEL, lo, hi, rf_h)
+frontier <- build_es_frontier(scenarios, ES_LEVEL, lo, hi, rf_h, N_FRONTIER,
+                              min_es$ret, 0.999 * max_return(scenarios, lo, hi))
+
+p_frontier <- plot_frontier(rand, frontier$es, frontier$ret, min_es, max_ratio,
+                            asset_ret, asset_es, rf_h, HORIZON_DAYS, ES_LEVEL)
+print(p_frontier)
+dir.create("figures", showWarnings = FALSE)
+ggplot2::ggsave("figures/frontier.png", p_frontier, width = 9, height = 6, dpi = 150, bg = "white")
+
+level_pct <- format(ES_LEVEL * 100)  # "95", "97.5"
+cat(sprintf("Sample: %s to %s, %d daily returns, %d assets | horizon %d days, %s scenarios\n",
+            rownames(prices)[1], rownames(prices)[nrow(prices)], nrow(logret), ncol(prices),
+            HORIZON_DAYS, format(N_SCENARIOS, big.mark = ",")))
+cat(sprintf("Min-ES:     E[R]=%.2f%%  ES%s=%.2f%%  ratio=%.3f\n",
+            100 * min_es$ret, level_pct, 100 * min_es$es, min_es$ratio))
+cat(sprintf("Max-ratio:  E[R]=%.2f%%  ES%s=%.2f%%  ratio=%.3f\n",
+            100 * max_ratio$ret, level_pct, 100 * max_ratio$es, max_ratio$ratio))
+knitr::kable(weights_table(min_es, max_ratio), caption = "Weights (%)")
+```
+
+### Table and histograms
+
+```{r distributions, fig.width = 9.6, fig.height = 4.6}
+returns <- cbind(scenarios,
+                 "Min-ES" = portfolio_scenarios(scenarios, min_es$w),
+                 "Max-ratio" = portfolio_scenarios(scenarios, max_ratio$w))
+stats <- horizon_stats(returns, ES_LEVEL)
+
+#' Format every column as a percentage: two decimals, one for prob_loss.
+as_percent <- function(df) {
+  out <- df
+  for (cn in names(df)) {
+    out[[cn]] <- sprintf(if (cn == "prob_loss") "%.1f%%" else "%.2f%%", 100 * df[[cn]])
+  }
+  out
+}
+knitr::kable(as_percent(stats), align = "r")
+
+p_dist <- plot_distributions(returns, HORIZON_DAYS)
+print(p_dist)
+ggplot2::ggsave("figures/distributions.png", p_dist, width = 9.6, height = 4.6, dpi = 150, bg = "white")
+```
