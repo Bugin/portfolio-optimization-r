@@ -1,0 +1,8 @@
+# SDD scratch, R session files, caches
+.superpowers/
+.Rhistory
+.RData
+.Rproj.user/
+*_cache/
+*_files/
+data/cache/
