@@ -10,7 +10,7 @@ plot_frontier <- function(rand, frontier_es, frontier_ret, min_es, max_ratio,
   ord <- order(frontier_es)
   front <- data.frame(es = frontier_es[ord], ret = frontier_ret[ord],
                       series = series[2])
-  cloud <- data.frame(es = rand$es, ret = rand$ret, series = series[1])
+  cloud <- data.frame(es = rand$es, ret = rand$ret, series = rep(series[1], nrow(rand)))
   assets <- data.frame(es = unname(asset_es), ret = unname(asset_ret),
                        label = names(asset_es), series = series[3])
   mn <- data.frame(es = min_es$es, ret = min_es$ret, series = series[4])
@@ -32,7 +32,9 @@ plot_frontier <- function(rand, frontier_es, frontier_ret, min_es, max_ratio,
     ggplot2::geom_point(aes_xy, mn, size = 4) +
     ggplot2::geom_point(aes_xy, mr, shape = 8, size = 4) +
     ggplot2::geom_point(aes_xy, rf, size = 3.5) +
-    ggplot2::scale_colour_manual(values = cols, breaks = series, name = NULL) +
+    ggplot2::scale_colour_manual(values = cols, limits = series, name = NULL) +
+    ggplot2::guides(colour = ggplot2::guide_legend(override.aes = list(
+      alpha = 1, size = c(2.5, 1, 2.6, 4, 4, 1, 3.5)))) +
     ggplot2::scale_x_continuous(labels = scales::percent_format(accuracy = 0.1)) +
     ggplot2::scale_y_continuous(labels = scales::percent_format(accuracy = 0.1)) +
     ggplot2::labs(x = sprintf("Expected Shortfall %s%% at the horizon (loss)",

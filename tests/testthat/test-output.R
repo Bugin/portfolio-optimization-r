@@ -60,3 +60,15 @@ test_that("both plots build and render headless", {
     ggplot2::ggsave(file.path(out, "t5_distributions.png"), d, width = 9, height = 6)
   }
 })
+
+test_that("plot_frontier handles an empty random cloud", {
+  s <- sim(synthetic_logret())
+  lo <- rep(0, 4); hi <- rep(1, 4); rf_h <- 0.002
+  mn <- min_es_portfolio(s, 0.95, lo, hi, rf_h)
+  mr <- max_ratio_portfolio(s, 0.95, lo, hi, rf_h)
+  fr <- build_es_frontier(s, 0.95, lo, hi, rf_h, 5, mn$ret, max_return(s, lo, hi))
+  rand <- data.frame(ret = numeric(0), es = numeric(0))
+  p <- plot_frontier(rand, fr$es, fr$ret, mn, mr, colMeans(s),
+                     apply(s, 2, expected_shortfall, level = 0.95), rf_h, 60, 0.95)
+  expect_no_error(ggplot2::ggplot_build(p))
+})
