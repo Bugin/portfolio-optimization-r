@@ -21,7 +21,9 @@ SIM_SEED <- 42              # bootstrap paths
 CLOUD_SEED <- 7             # random portfolio weights
 
 # Minimum and maximum weight per asset class (fraction of the portfolio).
-# Assets not listed get c(0, 1).
+# Assets not listed get c(0, 1). The notebook `Asset Allocation EUR.Rmd` restates
+# BOUNDS in its `parameters` chunk and that value wins when knitting; edit it
+# there. This default is used by the tests and by tests/verify_real_data.R.
 BOUNDS <- list("Euro Govt" = c(0, 1), "Euro Corp IG" = c(0, 1),
                "Euro Corp HY" = c(0, 1), "Europe Equity" = c(0, 1))
 
@@ -42,6 +44,8 @@ check_bounds <- function(bounds, names) {
   hi <- numeric(length(names))
   for (i in seq_along(names)) {
     b <- if (names[i] %in% base::names(bounds)) bounds[[names[i]]] else c(0, 1)
+    if (!is.numeric(b) || length(b) != 2 || anyNA(b))
+      stop(sprintf("BOUNDS[['%s']] must be c(min, max)", names[i]))
     lo[i] <- b[1]
     hi[i] <- b[2]
     if (lo[i] < 0)

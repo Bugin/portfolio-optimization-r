@@ -39,8 +39,8 @@ The pipeline:
 
 Conventions: returns are simple returns over the horizon; portfolios are
 buy-and-hold, with no rebalancing within the horizon; ES is reported as a
-positive number, a loss; the risk-free rate is a fixed annual constant (zero
-here) converted to the horizon; the minimum and maximum weight of each asset
+positive number, a loss; the risk-free rate is a fixed annual constant (set in
+`RISK_FREE`) converted to the horizon; the minimum and maximum weight of each asset
 class are set in `BOUNDS`. Days are resampled independently, each with the
 full historical cross-section, so correlations, fat tails and skew are those
 of the sample, while serial dependence is not modelled. The random cloud is

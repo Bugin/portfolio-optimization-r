@@ -190,13 +190,14 @@ Weights (%):
 | Euro Corp HY | 9.33 | 0.00 |
 | Europe Equity | 1.06 | 38.79 |
 
-On the same data the Python notebook gives Min-ES ES95 = 4.02% and a Max-ratio
+On data downloaded the same day the Python notebook gives Min-ES ES95 = 4.02% and a Max-ratio
 ratio of 0.165; the gap is Monte Carlo error, since the two languages draw
 different scenarios.
 
-The Max-ratio objective is flat near its optimum, so its weights can move a lot
-between nearby samples while the ratio barely changes: one extra day of data
-moved Euro Govt from 40% to 54%. The Min-ES weights are stable.
+The Max-ratio objective is flat near its optimum: on the same scenarios a mix of
+40% Govt / 23% IG / 37% equity reaches a ratio of 0.161 against 0.162 at the
+optimum (54 / 8 / 39), so a different bootstrap draw can move the weights a lot
+while the ratio barely changes; the Min-ES weights are stable.
 
 ## Disclaimer
 

@@ -34,3 +34,8 @@ test_that("check_bounds accepts sums at the float edge", {
   expect_silent(check_bounds(list("Euro Govt" = c(.6, 1), "Euro Corp IG" = c(.3, 1),
                                   "Euro Corp HY" = c(.1, 1)), nm))
 })
+
+test_that("check_bounds rejects malformed bounds", {
+  expect_error(check_bounds(list("Euro Govt" = 0.2), nm), "must be c(min, max)", fixed = TRUE)
+  expect_error(check_bounds(list("Euro Govt" = c(NA, 1)), nm), "must be c(min, max)", fixed = TRUE)
+})

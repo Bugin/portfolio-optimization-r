@@ -94,7 +94,7 @@ test_that("yahoo_download drops all-NA holiday rows before they reach prices/log
   m <- yahoo_download(c("A", "B"), "2024-01-01")
   expect_false(holiday %in% rownames(m))
   expect_equal(nrow(m), 9)
-  res <- get_prices_and_logret(c("A", "B"), cache_dir = new_cache(), downloader = yahoo_download)
+  capture.output(res <- get_prices_and_logret(c("A", "B"), cache_dir = new_cache(), downloader = yahoo_download))
   expect_false(holiday %in% rownames(res$prices))
   expect_false(holiday %in% rownames(res$logret))
   expect_true(all(res$logret != 0))

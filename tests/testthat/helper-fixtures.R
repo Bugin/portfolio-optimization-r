@@ -17,7 +17,7 @@ synthetic_logret <- function() {
   m
 }
 
-#' Bootstrap scenarios from a log-return matrix (needs Task 2's function).
+#' Bootstrap scenarios from a log-return matrix.
 sim <- function(logret, n = 2000, seed = 1) {
   simulate_horizon_returns(logret, 60, n, seed)
 }

@@ -54,11 +54,6 @@ test_that("both plots build and render headless", {
   f2 <- file.path(tempdir(), "dist.png")
   ggplot2::ggsave(f2, d, width = 9, height = 6)
   expect_true(file.exists(f2))
-  out <- file.path(testthat::test_path("../.."), ".superpowers/sdd/2026-10-28-r-translation")
-  if (dir.exists(out)) {
-    ggplot2::ggsave(file.path(out, "t5_frontier.png"), p, width = 9, height = 6)
-    ggplot2::ggsave(file.path(out, "t5_distributions.png"), d, width = 9, height = 6)
-  }
 })
 
 test_that("plot_frontier handles an empty random cloud", {
