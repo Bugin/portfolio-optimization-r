@@ -92,3 +92,26 @@ max_ratio_portfolio <- function(R, level, lo, hi, rf_h) {
          "the return/ES ratio is unbounded")
   portfolio_result(R, lp$w / sum(lp$w), level, rf_h)
 }
+
+#' Minimum-ES portfolio for each target expected return between `r_lo` and
+#' `r_hi`; infeasible targets are skipped with a message.
+#' Returns list(es, ret, W) with one row of `W` per solved target.
+build_es_frontier <- function(R, level, lo, hi, rf_h, n_points, r_lo, r_hi) {
+  es <- numeric(0)
+  ret <- numeric(0)
+  W <- matrix(numeric(0), 0, ncol(R))
+  for (target in seq(r_lo, r_hi, length.out = n_points)) {
+    p <- tryCatch(
+      min_es_portfolio(R, level, lo, hi, rf_h, target_return = target),
+      error = function(e) {
+        message(sprintf("[frontier] skipped target r=%.4f%%: %s", 100 * target,
+                        conditionMessage(e)))
+        NULL
+      })
+    if (is.null(p)) next
+    es <- c(es, p$es)
+    ret <- c(ret, p$ret)
+    W <- rbind(W, unname(p$w))
+  }
+  list(es = es, ret = ret, W = W)
+}
