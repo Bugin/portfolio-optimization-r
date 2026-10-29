@@ -1,13 +1,12 @@
 # Asset Allocation EUR (R)
 
-An R translation of the Python notebook
-[Bugin/portfolio-optimization](https://github.com/Bugin/portfolio-optimization):
-simulation-based asset allocation across four euro-denominated asset classes,
+Simulation-based asset allocation across four euro-denominated asset classes,
 using daily prices from Yahoo Finance. Instead of assuming a covariance matrix,
 the analysis resamples history to build 10,000 scenarios of 60-business-day
 returns and optimises portfolios on Expected Shortfall (ES), the average loss in
-the worst 5% of scenarios. The R code reproduces the Python results exactly on
-identical scenarios (see [Tests and verification](#tests-and-verification)).
+the worst 5% of scenarios. The optimiser is validated against an independent
+reference implementation on identical scenarios (see
+[Tests and verification](#tests-and-verification)).
 
 The R Markdown notebook downloads prices (with an on-disk cache) and computes:
 
@@ -142,8 +141,8 @@ Because the data runs up to the current date, results change from day to day.
 - **The random cloud is illustrative only**; the optimal portfolios come from
   the linear programs.
 - **Results depend on the download date and on the seeds** (`SIM_SEED`,
-  `CLOUD_SEED`). R's random number generator differs from NumPy's, so the same
-  seed gives different scenarios than the Python notebook.
+  `CLOUD_SEED`); a different generator or seed gives a different set of
+  scenarios and slightly different optima.
 
 ## Tests and verification
 
@@ -155,20 +154,20 @@ testthat::test_dir("tests/testthat")
 Rscript tests/verify_real_data.R
 ```
 
-The testthat suite has 45 tests (151 expectations) and takes about 80 seconds,
+The testthat suite has 46 tests (153 expectations) and takes about 80 seconds,
 about 70 of them in the cross-check. `verify_real_data.R` runs brute-force and
 consistency checks on the real cached data (LP objective against directly
 computed ES, a weight grid that must never beat the LP, bounds respected,
 monotone frontier, reproducibility); it takes about 2 minutes.
 
-**Cross-check against the Python notebook.**
-`tests/cross_check/export_from_python.py` runs the Python notebook's code on its
-cached data and writes the 10,000 x 4 bootstrap scenarios
-(`python_scenarios.csv`) together with its Min-ES, Max-ratio and 50-point
-frontier results (`python_expected.json`). `test-cross-check.R` feeds those same
-scenarios to the R optimiser and compares: Min-ES, Max-ratio and all 50 frontier
-points agree to about 1e-12, with and without weight bounds. Any remaining
-difference in a full run is therefore Monte Carlo error, not a difference in the
+**Cross-check against a reference implementation.**
+`tests/cross_check/` holds 10,000 x 4 bootstrap scenarios
+(`reference_scenarios.csv`) produced by an independent implementation of the
+same method, together with its Min-ES, Max-ratio and 50-point frontier results
+(`reference_expected.json`). `test-cross-check.R` feeds those same scenarios to
+the R optimiser and compares: Min-ES, Max-ratio and all 50 frontier points
+agree to about 1e-12, with and without weight bounds. Any difference between
+two full runs is therefore Monte Carlo error, not a difference in the
 optimisation.
 
 ## Example output
@@ -190,9 +189,9 @@ Weights (%):
 | Euro Corp HY | 9.33 | 0.00 |
 | Europe Equity | 1.06 | 38.79 |
 
-On data downloaded the same day the Python notebook gives Min-ES ES95 = 4.02% and a Max-ratio
-ratio of 0.165; the gap is Monte Carlo error, since the two languages draw
-different scenarios.
+On data downloaded the same day the reference implementation gives Min-ES
+ES95 = 4.02% and a Max-ratio ratio of 0.165; the gap is Monte Carlo error, since
+the two draw different scenarios.
 
 The Max-ratio objective is flat near its optimum: on the same scenarios a mix of
 40% Govt / 23% IG / 37% equity reaches a ratio of 0.161 against 0.162 at the

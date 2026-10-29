@@ -1,4 +1,4 @@
-# Parameters of the asset-allocation notebook (identical to the Python version).
+# Parameters of the asset-allocation notebook.
 # After changing anything here, re-run the notebook from the top.
 
 # Asset class -> ETF proxy (Xetra, EUR). The common history starts in

@@ -19,10 +19,10 @@ Yahoo Finance (downloaded with `quantmod`). Prices are adjusted for
 distributions, so each series is a proxy for the total-return index of its
 asset class.
 
-This notebook is an R translation of the Python reference implementation in
-[Bugin/portfolio-optimization](https://github.com/Bugin/portfolio-optimization);
-the methods are the same, while the simulated numbers differ within Monte
-Carlo error because the two languages use different random number generators.
+The optimiser is validated against an independent reference implementation of
+the same method on identical scenarios (see the test suite); full runs of the
+two differ only within Monte Carlo error, because they draw different
+scenarios.
 
 The pipeline:
 

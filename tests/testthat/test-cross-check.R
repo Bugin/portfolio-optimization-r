@@ -1,15 +1,15 @@
-# Cross-check against the Python reference implementation: same scenarios
-# (exported by tests/cross_check/export_from_python.py), same optima.
+# Cross-check against an independent reference implementation: same scenarios
+# (tests/cross_check/reference_scenarios.csv), same optima.
 # Two frontiers of 50 LPs on 10 000 scenarios: this file takes about a minute.
 
-csv <- test_path("../cross_check/python_scenarios.csv")
-json <- test_path("../cross_check/python_expected.json")
+csv <- test_path("../cross_check/reference_scenarios.csv")
+json <- test_path("../cross_check/reference_expected.json")
 
 #' Absolute-tolerance comparison of two scalars.
 expect_close <- function(a, b, tol = 1e-6) expect_lt(abs(a - b), tol)
 
 for (label in c("trivial", "tight")) {
-  test_that(paste("min-ES, max-ratio and frontier match Python,", label, "bounds"), {
+  test_that(paste("min-ES, max-ratio and frontier match the reference,", label, "bounds"), {
     skip_if_not(file.exists(csv) && file.exists(json), "cross-check fixtures missing")
     R <- as.matrix(read.csv(csv, check.names = FALSE))
     J <- jsonlite::fromJSON(json, simplifyVector = TRUE)

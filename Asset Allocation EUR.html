@@ -384,11 +384,10 @@ European equity — each represented by a UCITS ETF quoted on Xetra, with
 daily prices from Yahoo Finance (downloaded with <code>quantmod</code>).
 Prices are adjusted for distributions, so each series is a proxy for the
 total-return index of its asset class.</p>
-<p>This notebook is an R translation of the Python reference
-implementation in <a href="https://github.com/Bugin/portfolio-optimization">Bugin/portfolio-optimization</a>;
-the methods are the same, while the simulated numbers differ within
-Monte Carlo error because the two languages use different random number
-generators.</p>
+<p>The optimiser is validated against an independent reference
+implementation of the same method on identical scenarios (see the test
+suite); full runs of the two differ only within Monte Carlo error,
+because they draw different scenarios.</p>
 <p>The pipeline:</p>
 <ol style="list-style-type: decimal">
 <li>download adjusted close prices (cached on disk) and compute daily
@@ -563,7 +562,7 @@ bootstrap are visible. The tail columns are named after
 <p>Download, simulate, optimise and plot, using the parameters
 above.</p>
 <pre class="r"><code>data &lt;- get_prices_and_logret(TICKERS)</code></pre>
-<pre><code>## [data] cache (0.3h old)</code></pre>
+<pre><code>## [data] cache (7.8h old)</code></pre>
 <pre class="r"><code>prices &lt;- data$prices
 logret &lt;- data$logret
 colnames(logret) &lt;- unname(NAMES[colnames(logret)])  # asset-class labels from here on
