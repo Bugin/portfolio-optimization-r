@@ -376,8 +376,7 @@ The program has $n + 1 + S$ variables ($10\,005$ here) and $S$ scenario
 rows plus a few portfolio rows. The scenario block is the sparse matrix
 $[\,-R \;\; -\ones \;\; -I_S\,]$. The problem is solved with HiGHS
 \cite{highs}, an open-source simplex and interior-point solver; one solve
-with $S = 10\,000$ takes well under a second (about $0.7$~s on a laptop),
-and the answer is
+with $S = 10\,000$ takes about one second on a laptop, and the answer is
 exact up to the solver's tolerance (about $10^{-7}$). There is no local
 optimum to worry about: a linear program is convex.
 
@@ -584,8 +583,8 @@ Europe Equity  &  1.06 & 38.79 \\
 
 The minimum-ES portfolio is almost entirely in bonds, split between
 government and investment-grade credit, with a 60-day Expected Shortfall of
-about 4\%: over three months the tail of the bond ETFs is of the order of
-their volatility, with the 2020 and 2022 episodes in the sample. The
+about 4\%: with the 2020 and 2022 episodes in the sample, even euro bonds
+are far from riskless over three months. The
 maximum-ratio portfolio takes about 39\% equity, 54\% government bonds and
 very little credit: at this horizon, and with the tail dependence of the
 sample, high-yield credit adds tail risk without enough expected return to
@@ -1125,8 +1124,7 @@ contains it). Then:
 \end{enumerate}
 The first run downloads the prices (a few seconds) and creates
 \file{data/cache/}; later runs within 12 hours use the cache. Rendering
-takes about half a minute, most of it in the 50 frontier LPs and the 3\,000
-random portfolios. The HTML and the two PNG files in \file{figures/} are
+takes about a minute, most of it in the 50 frontier LPs. The HTML and the two PNG files in \file{figures/} are
 overwritten at every run.
 
 \subsection{Common changes}
@@ -1140,7 +1138,7 @@ overwritten at every run.
   \item \textbf{Change the horizon, the number of scenarios or the ES
         level.} Edit the constant in \file{R/params.R}. The level appears in
         the axis title and in the column names of the statistics table
-        (\code{var\_975}, \code{es\_975} for 0.975). With a fractional tail
+        (\code{var\_97.5}, \code{es\_97.5} for 0.975). With a fractional tail
         size ($(1-\alpha)S$ not an integer) the ES formula and the LP still
         agree exactly.
   \item \textbf{Use a non-zero risk-free rate.} Set \code{RISK\_FREE} to the
