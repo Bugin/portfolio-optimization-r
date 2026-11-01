@@ -86,6 +86,10 @@ plain R session either install pandoc or point `RSTUDIO_PANDOC` at the folder
 that contains it (RStudio keeps one under `resources/app/bin/quarto/bin/tools`)
 before calling `rmarkdown::render`.
 
+The first run downloads the prices (a few seconds); rendering takes about a
+minute, almost all of it in the 50 linear programs of the frontier (about one
+second each on 10,000 scenarios).
+
 ## Project layout
 
 ```
@@ -95,6 +99,7 @@ install.R                   # package installer
 R/                          # parameters, data, simulation, metrics, optimisation, cloud, stats, plots
 tests/                      # testthat suite, verify_real_data.R, cross_check/ fixtures
 figures/                    # frontier.png, distributions.png
+docs/                       # project-guide.pdf (and .tex): theory, methodology and code walkthrough
 ```
 
 `R/all.R` sources the other files in order; the `.Rmd` calls it from the
@@ -154,8 +159,8 @@ testthat::test_dir("tests/testthat")
 Rscript tests/verify_real_data.R
 ```
 
-The testthat suite has 46 tests (153 expectations) and takes about 80 seconds,
-about 70 of them in the cross-check. `verify_real_data.R` runs brute-force and
+The testthat suite has 46 tests (153 expectations) and takes about a minute
+and a half, most of it in the cross-check. `verify_real_data.R` runs brute-force and
 consistency checks on the real cached data (LP objective against directly
 computed ES, a weight grid that must never beat the LP, bounds respected,
 monotone frontier, reproducibility); it takes about 2 minutes.
