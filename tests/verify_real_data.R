@@ -117,7 +117,7 @@ verify <- function(logret, scenarios, rf_h, bounds, tag) {
                  100 * max_ratio$ret, on$es, max_ratio$es, d3))
 
   # 4. Reproducibility: same seed, same scenarios, same Min-ES weights.
-  scen2 <- simulate_horizon_returns(logret, HORIZON_DAYS, N_SCENARIOS, SIM_SEED)
+  scen2 <- simulate_horizon_returns(logret, horizon, N_SCENARIOS, SIM_SEED)
   again <- min_es_portfolio(scen2, level, lo, hi, rf_h)
   same_s <- identical(scen2, scenarios)
   same_w <- identical(again$w, min_es$w)
@@ -129,11 +129,13 @@ data <- get_prices_and_logret(TICKERS)
 prices <- data$prices
 logret <- data$logret
 colnames(logret) <- unname(NAMES[colnames(logret)])
-scenarios <- simulate_horizon_returns(logret, HORIZON_DAYS, N_SCENARIOS, SIM_SEED)
+logret <- aggregate_logret(logret, RETURN_FREQ)
+horizon <- horizon_periods(HORIZON_DAYS, RETURN_FREQ)
+scenarios <- simulate_horizon_returns(logret, horizon, N_SCENARIOS, SIM_SEED)
 rf_h <- 0
-cat(sprintf("Sample %s to %s, %d daily returns; %d scenarios x %d days\n",
-            rownames(prices)[1], rownames(prices)[nrow(prices)], nrow(logret),
-            N_SCENARIOS, HORIZON_DAYS))
+cat(sprintf("Sample %s to %s, %d %s returns; %d scenarios x %d %s\n",
+            rownames(prices)[1], rownames(prices)[nrow(prices)], nrow(logret), RETURN_FREQ,
+            N_SCENARIOS, horizon, if (RETURN_FREQ == "daily") "days" else "weeks"))
 verify(logret, scenarios, rf_h, BOUNDS, "BOUNDS (trivial)")
 verify(logret, scenarios, rf_h, TIGHT_BOUNDS, "Equity<=20%, Govt>=10%")
 cat(sprintf("\nElapsed: %.1f s\n", as.numeric(difftime(Sys.time(), t0, units = "secs"))))

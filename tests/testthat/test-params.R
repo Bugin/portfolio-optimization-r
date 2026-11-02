@@ -1,8 +1,8 @@
 nm <- c("Euro Govt", "Euro Corp IG", "Euro Corp HY", "Europe Equity")
 
 test_that("parameters exist", {
-  for (x in c("NAMES", "TICKERS", "BOUNDS", "HORIZON_DAYS", "ES_LEVEL", "check_bounds",
-              "load_close", "get_prices_and_logret"))
+  for (x in c("NAMES", "TICKERS", "BOUNDS", "HORIZON_DAYS", "RETURN_FREQ", "ES_LEVEL", "check_bounds",
+              "load_close", "get_prices_and_logret", "aggregate_logret", "horizon_periods"))
     expect_true(exists(x), info = x)
   expect_equal(TICKERS, names(NAMES))
 })

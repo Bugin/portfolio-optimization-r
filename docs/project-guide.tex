@@ -207,6 +207,21 @@ daily returns.
 The $T\times n$ matrix $X$ of daily log returns is the only input of
 everything that follows.
 
+\paragraph{Weekly returns.} The parameter \code{RETURN\_FREQ} (default
+\code{"daily"}) can switch the whole analysis to weekly returns. With
+\code{"weekly"} the daily log returns are summed within each ISO calendar
+week, which gives the log return between the last prices of consecutive
+weeks; a week shortened by a holiday is still a week, and the first and last
+weeks of the sample are dropped because they may be partial. Each weekly
+return is dated at its last trading day. The horizon stays expressed in
+business days and is converted to a number of weeks ($60$ days $= 12$
+weeks); the risk-free conversion is unchanged. One caveat: because of
+holidays a resampled week has on average about $4.9$ trading days, so $12$
+weeks cover about $58$ trading days rather than $60$, and drift and
+dispersion at the horizon are correspondingly about $3\%$ lower than in
+daily mode. The sample of the run of 2026-10-29 ($4\,027$ daily returns)
+gives $827$ weekly returns.
+
 \subsection{Cache}
 
 Prices are downloaded from 2010-01-01 to the current day and cached on disk,
@@ -231,7 +246,9 @@ $x_t$: it is the empirical distribution of the $T$ historical days.
 
 Under this assumption the horizon return of a scenario is obtained by
 drawing $H$ days at random, with replacement, from the sample and summing
-their log returns (a bootstrap in the sense of Efron \cite{efron}). For
+their log returns (a bootstrap in the sense of Efron \cite{efron}). With
+weekly returns the same holds with ``week'' for ``day'' and $H = 12$ weeks:
+the text below says days for brevity. For
 scenario $s$ draw $\tau_{s,1},\dots,\tau_{s,H}$ uniformly from
 $\{1,\dots,T\}$ and set
 \begin{equation}
@@ -612,8 +629,11 @@ weights.
 
 \begin{itemize}[nosep]
   \item \textbf{Independent days.} The i.i.d.\ bootstrap ignores volatility
-        clustering and autocorrelation. A block or stationary bootstrap would
-        keep short-range dependence, at the price of choosing a block length.
+        clustering and autocorrelation. Resampling whole weeks
+        (\code{RETURN\_FREQ = "weekly"}) keeps the dependence inside each
+        week, with a sample five times smaller; a block or stationary
+        bootstrap would keep longer dependence, at the price of choosing a
+        block length.
   \item \textbf{Historical drift.} Expected returns are sample means over
         2010--2026. Over 60 days they are small relative to the dispersion,
         but they set the ranking of the assets, which the ratio and the
@@ -663,10 +683,10 @@ portfolio-optimization-r/
 |   |-- testthat.R                  entry point: runs tests/testthat/
 |   |-- testthat/                   unit tests, one file per module
 |   |   |-- helper-fixtures.R       sources R/all.R, synthetic data, helpers
-|   |   |-- test-params.R           test-data.R, test-simulation.R,
-|   |   |-- ...                     test-metrics.R, test-optimisation.R,
-|   |   `-- test-cross-check.R      test-frontier.R, test-cloud.R,
-|   |                               test-output.R
+|   |   |-- test-params.R           test-data.R, test-frequency.R,
+|   |   |-- ...                     test-simulation.R, test-metrics.R,
+|   |   `-- test-cross-check.R      test-optimisation.R, test-frontier.R,
+|   |                               test-cloud.R, test-output.R
 |   |-- cross_check/                fixtures from the reference implementation
 |   |   |-- reference_scenarios.csv 10,000 x 4 scenarios
 |   |   `-- reference_expected.json its optima and frontier on those scenarios
@@ -675,7 +695,8 @@ portfolio-optimization-r/
 |   |-- frontier.png                Figure 1, written by the notebook
 |   `-- distributions.png           Figure 2, written by the notebook
 |-- docs/
-|   `-- project-guide.tex / .pdf    this document
+|   |-- project-guide.tex / .pdf    this document
+|   `-- specs/                      design notes of later changes
 `-- data/cache/                     (generated, not tracked) price cache
 \end{verbatim}
 
@@ -724,10 +745,13 @@ Read it as the table of contents of the \file{R/} folder:
 \begin{verbatim}
 data <- get_prices_and_logret(TICKERS)                      # R/data.R
 logret <- data$logret; colnames(logret) <- NAMES[...]   # asset-class labels
+logret  <- aggregate_logret(logret, RETURN_FREQ)            # daily or weekly
+horizon <- horizon_periods(HORIZON_DAYS, RETURN_FREQ)       # R/params.R
+h_label <- horizon_label(HORIZON_DAYS, RETURN_FREQ)
 b <- check_bounds(BOUNDS, colnames(logret)); lo <- b$lo; hi <- b$hi
 rf_h <- exp(RISK_FREE * HORIZON_DAYS / 252) - 1             # annual -> horizon
 
-scenarios <- simulate_horizon_returns(logret, HORIZON_DAYS, # R/simulation.R
+scenarios <- simulate_horizon_returns(logret, horizon,      # R/simulation.R
                                       N_SCENARIOS, SIM_SEED)
 asset_ret <- colMeans(scenarios)
 asset_es  <- apply(scenarios, 2, expected_shortfall, level = ES_LEVEL)
@@ -761,7 +785,7 @@ about it. The non-trivial blocks inside the functions carry a comment
 explaining the step. This section gives the map; the comments give the
 details.
 
-\subsection{\file{params.R}: parameters and \code{check\_bounds()}}
+\subsection{\file{params.R}: parameters, horizon helpers and \code{check\_bounds()}}
 
 All tunable quantities live here, as plain global constants
 (Table~\ref{tab:params}). \code{NAMES} maps each Yahoo ticker to the
@@ -778,6 +802,7 @@ Constant & Meaning & Value \\
 \midrule
 \code{START\_DATE}      & first date requested from Yahoo        & 2010-01-01 \\
 \code{HORIZON\_DAYS}    & horizon $H$ in business days            & 60 \\
+\code{RETURN\_FREQ}     & returns resampled: \code{"daily"} or \code{"weekly"} & \code{"daily"} \\
 \code{N\_SCENARIOS}     & bootstrap scenarios $S$                 & 10\,000 \\
 \code{ES\_LEVEL}        & confidence level $\alpha$               & 0.95 \\
 \code{N\_RANDOM}        & random portfolios in the cloud          & 3\,000 \\
@@ -794,7 +819,12 @@ Constant & Meaning & Value \\
 \label{tab:params}
 \end{table}
 
-\code{check\_bounds(bounds, names)} is the only function in the file. It
+Three functions follow the constants. \code{horizon\_periods(horizon\_days,
+freq)} returns the number of periods the bootstrap must draw: the days
+themselves, or \code{horizon\_days / 5} for weekly returns, stopping if that
+is not a whole number. \code{horizon\_label()} builds the text of the chart
+titles from the same two arguments (\code{"60-day"} or
+\code{"12-week (60 business days)"}). \code{check\_bounds(bounds, names)}
 turns the named list \code{BOUNDS} into two numeric vectors \code{lo} and
 \code{hi} ordered like \code{names}, filling $(0,1)$ for assets not listed,
 and stops with a message naming the offending asset when an entry is not a
@@ -807,7 +837,7 @@ tolerance of $10^{-9}$ against floating-point rounding in the sums.
 \subsection{\file{data.R}: download, cache, prices and log returns}
 \label{sec:code-data}
 
-Four functions, used in this order.
+Five functions, used in this order.
 
 \paragraph{\code{yahoo\_download(tickers, start)}} downloads each ticker
 with \code{quantmod::getSymbols()}, keeps the \emph{Adjusted} column and
@@ -852,6 +882,14 @@ missing prices column by column with an explicit loop (``a missing price
 is replaced by the last available one''), keeps only the dates on which
 every asset has a price, and returns \code{prices} and
 \code{logret = diff(log(prices))}, both matrices with date row names.
+
+\paragraph{\code{aggregate\_logret(logret, freq)}} returns its input for
+\code{"daily"}. For \code{"weekly"} it labels every row with its ISO
+year-week (\code{format(date, "\%G-\%V")}), drops the rows of the first and
+last week, and sums the daily log returns week by week with a loop over the
+weeks, dating each result at the week's last trading day. The notebook calls
+it right after the download, so everything downstream sees one matrix of
+returns and never asks which frequency it has.
 
 \subsection{\file{simulation.R}: the bootstrap}
 
@@ -977,7 +1015,7 @@ visible in the table header.
 Both functions return a \code{ggplot} object; the notebook prints it and
 saves it with \code{ggsave()}.
 
-\paragraph{\code{plot\_frontier()}} takes the cloud \code{rand}, the frontier (\code{frontier\_es}, \code{frontier\_ret}), the two portfolios \code{min\_es} and \code{max\_ratio}, the single assets (\code{asset\_ret}, \code{asset\_es}), \code{rf\_h}, \code{horizon} and \code{level}. It builds one small
+\paragraph{\code{plot\_frontier()}} takes the cloud \code{rand}, the frontier (\code{frontier\_es}, \code{frontier\_ret}), the two portfolios \code{min\_es} and \code{max\_ratio}, the single assets (\code{asset\_ret}, \code{asset\_es}), \code{rf\_h}, the text \code{horizon\_label} and \code{level}. It builds one small
 data frame per series (cloud, frontier sorted by ES so that it is drawn
 left to right, single assets with their labels, the two optimal portfolios,
 the allocation line from $-r_f^{(H)}$ to a little beyond the riskiest point
@@ -988,12 +1026,12 @@ black riskless point and finally the labels, placed by \code{ggrepel} with a
 white halo and pushed away from the three marked points as well. The legend
 follows a fixed order and its keys are enlarged so that they stay readable;
 the x-axis title is built from \code{level} and the chart title from
-\code{horizon}. The three
+\code{horizon\_label}. The three
 non-ASCII characters in the titles (en dash, plus--minus, sigma) are
 written as \code{\textbackslash u} escapes so that the file is plain ASCII
 and renders the same in every locale.
 
-\paragraph{\code{plot\_distributions()}} takes \code{returns}, \code{horizon} and \code{n\_sigma} (default 4) and draws, for every column of \code{returns}, a density histogram of the
+\paragraph{\code{plot\_distributions()}} takes \code{returns}, \code{horizon\_label} and \code{n\_sigma} (default 4) and draws, for every column of \code{returns}, a density histogram of the
 observations clipped to mean $\pm$ \code{n\_sigma} standard deviations and
 the normal density with the same mean and standard deviation, in a grid of
 panels with free axes and in the column order of the input (a factor with
@@ -1027,7 +1065,7 @@ daily log returns for four assets with fixed means, volatilities and seed;
 the given step that sums to one; \code{apply\_bounds(W, lo, hi)} keeps the
 rows of a weight matrix that respect the bounds.
 
-There is one test file per module, 46 test blocks and 153 expectations in
+There is one test file per module, 52 test blocks and 175 expectations in
 all:
 \begin{itemize}[nosep]
   \item \file{test-params.R}: the parameters exist; \code{check\_bounds()}
@@ -1042,6 +1080,14 @@ all:
         \code{get\_prices\_and\_logret()} returns log returns, drops empty
         tickers, forward-fills and errors on an empty result;
         \code{yahoo\_download()} drops all-\code{NA} holiday rows.
+  \item \file{test-frequency.R}: \code{aggregate\_logret()} is the identity
+        for daily returns; on a calendar-day series every weekly return
+        equals the log ratio of the week-end prices rebuilt from the daily
+        ones, is dated at the week's last day and consecutive rows are seven
+        days apart; a hand-built case covers an ISO week split across two
+        years and a week with one trading day; the first and last weeks are
+        dropped; \code{horizon\_periods()} maps 60 days to 12 weeks and
+        rejects 61; unknown frequencies error.
   \item \file{test-simulation.R}: shape and column names; with a horizon
         of one day every scenario is a historical day; the same seed gives
         the same matrix; two perfectly correlated assets stay perfectly
@@ -1141,6 +1187,14 @@ overwritten at every run.
         (\code{var\_97.5}, \code{es\_97.5} for 0.975). With a fractional tail
         size ($(1-\alpha)S$ not an integer) the ES formula and the LP still
         agree exactly.
+  \item \textbf{Resample weeks instead of days.} Set \code{RETURN\_FREQ}
+        to \code{"weekly"} in \file{R/params.R}. The sample line of the
+        notebook then reports weekly returns and the charts a
+        \code{12-week (60 business days)} horizon; \code{HORIZON\_DAYS}
+        must be a multiple of 5. Expect the optimal weights to move, since
+        the resampled distribution has about five times fewer support points,
+        keeps the within-week dependence and covers slightly fewer trading
+        days (Section~\ref{sec:data}).
   \item \textbf{Use a non-zero risk-free rate.} Set \code{RISK\_FREE} to the
         annual rate; the notebook converts it to the horizon. The riskless
         point then moves to $(-r_f^{(H)}, r_f^{(H)})$ and the ratio is

@@ -11,6 +11,7 @@ TICKERS <- names(NAMES)
 START_DATE <- "2010-01-01"
 
 HORIZON_DAYS <- 60          # business days, about 3 months
+RETURN_FREQ <- "daily"      # "daily": resample historical days; "weekly": historical weeks
 N_SCENARIOS <- 10000        # bootstrap paths
 ES_LEVEL <- 0.95            # Expected Shortfall confidence level
 N_RANDOM <- 3000            # random portfolios in the cloud
@@ -29,6 +30,29 @@ BOUNDS <- list("Euro Govt" = c(0, 1), "Euro Corp IG" = c(0, 1),
 
 CACHE_DIR <- "data/cache"   # relative to the notebook folder
 CACHE_TTL_HOURS <- 12
+
+#' Number of periods to resample for a horizon of `horizon_days` business days.
+#'
+#' "daily" resamples the days themselves; "weekly" resamples calendar weeks,
+#' nominally five business days each, so the horizon must be a multiple of 5.
+#' A resampled week has on average slightly fewer than five trading days
+#' (holidays), so 12 weeks cover about 58 trading days rather than 60; the
+#' risk-free rate is still converted with horizon_days / 252.
+horizon_periods <- function(horizon_days, freq) {
+  if (identical(freq, "daily")) return(horizon_days)
+  if (!identical(freq, "weekly")) stop("RETURN_FREQ must be 'daily' or 'weekly', not '", freq, "'")
+  weeks <- horizon_days / 5
+  if (weeks != round(weeks))
+    stop(sprintf("HORIZON_DAYS = %s is not a whole number of weeks", horizon_days))
+  as.integer(weeks)
+}
+
+#' Text for chart titles: "60-day" or "12-week (60 business days)".
+horizon_label <- function(horizon_days, freq) {
+  periods <- horizon_periods(horizon_days, freq)
+  if (identical(freq, "daily")) sprintf("%d-day", periods)
+  else sprintf("%d-week (%d business days)", periods, horizon_days)
+}
 
 #' Validate per-asset weight bounds.
 #'

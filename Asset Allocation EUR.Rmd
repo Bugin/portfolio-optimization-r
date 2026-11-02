@@ -28,7 +28,8 @@ The pipeline:
 
 1. download adjusted close prices (cached on disk) and compute daily log
    returns;
-2. bootstrap whole historical days over `HORIZON_DAYS` business days,
+2. bootstrap whole historical days (or weeks, see `RETURN_FREQ`) over
+   `HORIZON_DAYS` business days,
    `N_SCENARIOS` times, to obtain the joint distribution of the four asset
    returns at the horizon;
 3. measure risk by the **Expected Shortfall** (ES) at `ES_LEVEL`;
@@ -41,9 +42,10 @@ Conventions: returns are simple returns over the horizon; portfolios are
 buy-and-hold, with no rebalancing within the horizon; ES is reported as a
 positive number, a loss; the risk-free rate is a fixed annual constant (set in
 `RISK_FREE`) converted to the horizon; the minimum and maximum weight of each asset
-class are set in `BOUNDS`. Days are resampled independently, each with the
-full historical cross-section, so correlations, fat tails and skew are those
-of the sample, while serial dependence is not modelled. The random cloud is
+class are set in `BOUNDS`. Periods (days, or weeks) are resampled
+independently, each with the full historical cross-section, so correlations,
+fat tails and skew are those of the sample, while serial dependence between
+periods is not modelled. The random cloud is
 only illustrative: the optimal portfolios come from the linear programs.
 
 ## Setup
@@ -59,7 +61,13 @@ source("R/all.R")
 
 ### Parameters
 
-All parameters are defined in `R/params.R`. `BOUNDS` sets the minimum and
+All parameters are defined in `R/params.R`. `RETURN_FREQ` chooses whether the
+bootstrap resamples historical days (`"daily"`) or whole weeks (`"weekly"`,
+the sum of the daily log returns of each ISO week); the horizon stays in
+business days and is converted to the number of weeks to resample (12 for 60
+days; holidays make a resampled week slightly shorter than five trading days,
+so 12 weeks cover about 58 of them).
+`BOUNDS` sets the minimum and
 maximum weight of each asset class and is restated below so it can be edited
 here; assets not listed get `c(0, 1)`, and the bounds are validated when the
 Run chunk starts. After changing anything, re-knit the notebook from the top.
@@ -77,8 +85,8 @@ BOUNDS <- list("Euro Govt"     = c(0, 1),
 
 # The other parameters, as defined in R/params.R.
 str(list(NAMES = NAMES, START_DATE = START_DATE, HORIZON_DAYS = HORIZON_DAYS,
-         N_SCENARIOS = N_SCENARIOS, ES_LEVEL = ES_LEVEL, N_RANDOM = N_RANDOM,
-         DIRICHLET_ALPHA = DIRICHLET_ALPHA, N_FRONTIER = N_FRONTIER,
+         RETURN_FREQ = RETURN_FREQ, N_SCENARIOS = N_SCENARIOS, ES_LEVEL = ES_LEVEL,
+         N_RANDOM = N_RANDOM, DIRICHLET_ALPHA = DIRICHLET_ALPHA, N_FRONTIER = N_FRONTIER,
          RISK_FREE = RISK_FREE, SIM_SEED = SIM_SEED, CLOUD_SEED = CLOUD_SEED,
          CACHE_DIR = CACHE_DIR, CACHE_TTL_HOURS = CACHE_TTL_HOURS))
 ```
@@ -102,9 +110,11 @@ listing in the universe (the high-yield ETF, December 2010).
 ## Simulation
 
 Bootstrap (`simulate_horizon_returns`, `R/simulation.R`): whole historical
-days are resampled with replacement, so the cross-section of the four assets
-is preserved exactly as observed. Days are drawn independently. The simple
-return at the horizon is `exp(sum of the daily log returns) - 1`.
+periods (days, or weeks when `RETURN_FREQ = "weekly"`) are resampled with
+replacement, so the cross-section of the four assets is preserved exactly as
+observed. Periods are drawn independently; with weekly returns the serial
+dependence inside each week is kept. The simple return at the horizon is
+`exp(sum of the resampled log returns) - 1`.
 
 ## Portfolio metrics
 
@@ -176,12 +186,15 @@ data <- get_prices_and_logret(TICKERS)
 prices <- data$prices
 logret <- data$logret
 colnames(logret) <- unname(NAMES[colnames(logret)])  # asset-class labels from here on
+logret <- aggregate_logret(logret, RETURN_FREQ)       # daily (unchanged) or weekly
+horizon <- horizon_periods(HORIZON_DAYS, RETURN_FREQ) # periods to resample
+h_label <- horizon_label(HORIZON_DAYS, RETURN_FREQ)   # for the chart titles
 b <- check_bounds(BOUNDS, colnames(logret))
 lo <- b$lo
 hi <- b$hi
 rf_h <- exp(RISK_FREE * HORIZON_DAYS / 252) - 1
 
-scenarios <- simulate_horizon_returns(logret, HORIZON_DAYS, N_SCENARIOS, SIM_SEED)
+scenarios <- simulate_horizon_returns(logret, horizon, N_SCENARIOS, SIM_SEED)
 asset_ret <- colMeans(scenarios)
 asset_es <- apply(scenarios, 2, expected_shortfall, level = ES_LEVEL)
 
@@ -192,15 +205,16 @@ frontier <- build_es_frontier(scenarios, ES_LEVEL, lo, hi, rf_h, N_FRONTIER,
                               min_es$ret, 0.999 * max_return(scenarios, lo, hi))
 
 p_frontier <- plot_frontier(rand, frontier$es, frontier$ret, min_es, max_ratio,
-                            asset_ret, asset_es, rf_h, HORIZON_DAYS, ES_LEVEL)
+                            asset_ret, asset_es, rf_h, h_label, ES_LEVEL)
 print(p_frontier)
 dir.create("figures", showWarnings = FALSE)
 ggplot2::ggsave("figures/frontier.png", p_frontier, width = 9, height = 6, dpi = 150, bg = "white")
 
 level_pct <- format(ES_LEVEL * 100)  # "95", "97.5"
-cat(sprintf("Sample: %s to %s, %d daily returns, %d assets | horizon %d days, %s scenarios\n",
-            rownames(prices)[1], rownames(prices)[nrow(prices)], nrow(logret), ncol(prices),
-            HORIZON_DAYS, formatC(N_SCENARIOS, format = "d", big.mark = ",")))
+cat(sprintf("Sample: %s to %s, %d %s returns, %d assets | horizon %d %s, %s scenarios\n",
+            rownames(prices)[1], rownames(prices)[nrow(prices)], nrow(logret), RETURN_FREQ,
+            ncol(prices), horizon, if (RETURN_FREQ == "daily") "days" else "weeks",
+            formatC(N_SCENARIOS, format = "d", big.mark = ",")))
 cat(sprintf("Min-ES:     E[R]=%.2f%%  ES%s=%.2f%%  ratio=%.3f\n",
             100 * min_es$ret, level_pct, 100 * min_es$es, min_es$ratio))
 cat(sprintf("Max-ratio:  E[R]=%.2f%%  ES%s=%.2f%%  ratio=%.3f\n",
@@ -226,7 +240,7 @@ as_percent <- function(df) {
 }
 knitr::kable(as_percent(stats), align = "r")
 
-p_dist <- plot_distributions(returns, HORIZON_DAYS)
+p_dist <- plot_distributions(returns, h_label)
 print(p_dist)
 ggplot2::ggsave("figures/distributions.png", p_dist, width = 9.6, height = 4.6, dpi = 150, bg = "white")
 ```

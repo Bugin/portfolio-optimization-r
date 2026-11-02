@@ -157,3 +157,36 @@ get_prices_and_logret <- function(tickers, start = START_DATE, force_refresh = F
   logret <- diff(log(prices))
   list(prices = prices, logret = logret)
 }
+
+
+#' Log returns at the chosen frequency: "daily" (unchanged) or "weekly".
+#'
+#' Weekly log returns are the sums of the daily log returns that fall in the
+#' same ISO week, which equals log(P_end / P_start) between the last prices
+#' of consecutive weeks. Weeks shortened by a holiday stay weeks; the first
+#' and the last week of the sample are always dropped because they may be
+#' partial (at most two weeks lost). Each weekly row is dated at its last
+#' trading day. Returns a matrix with the same columns as `logret`.
+aggregate_logret <- function(logret, freq) {
+  if (identical(freq, "daily")) return(logret)
+  if (!identical(freq, "weekly")) stop("RETURN_FREQ must be 'daily' or 'weekly', not '", freq, "'")
+  if (is.null(rownames(logret))) stop("aggregate_logret needs dates as rownames")
+
+  week <- format(as.Date(rownames(logret)), "%G-%V")   # ISO year-week, e.g. "2021-07"
+
+  # Drop the first and the last week: the sample may start or end mid-week.
+  keep <- !(week %in% c(week[1], week[length(week)]))
+  logret <- logret[keep, , drop = FALSE]
+  week <- week[keep]
+
+  weeks <- unique(week)                                # in chronological order
+  out <- matrix(0, length(weeks), ncol(logret), dimnames = list(NULL, colnames(logret)))
+  last_day <- character(length(weeks))
+  for (g in seq_along(weeks)) {
+    rows <- which(week == weeks[g])
+    out[g, ] <- colSums(logret[rows, , drop = FALSE])  # sum of the daily log returns
+    last_day[g] <- rownames(logret)[max(rows)]
+  }
+  rownames(out) <- last_day
+  out
+}

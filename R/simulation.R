@@ -1,17 +1,19 @@
 # Simulation of the asset returns at the horizon by bootstrap.
 
 
-#' Bootstrap the returns of every asset over `horizon` business days.
+#' Bootstrap the returns of every asset over `horizon` periods.
 #'
-#' Each scenario is built by drawing `horizon` historical days at random,
-#' with replacement, and summing their daily log returns. The *same* days
-#' are used for all assets: a day is resampled as a whole row of `logret`,
-#' so the co-movement of the assets (correlation, joint crashes) is exactly
-#' the one observed in history. Days are drawn independently of each other,
-#' so the average drift is reproduced but no serial dependence is
-#' (no autocorrelation, no volatility clustering).
+#' A period is a row of `logret`: a trading day, or a week when the log
+#' returns were aggregated weekly. Each scenario is built by drawing
+#' `horizon` historical periods at random, with replacement, and summing
+#' their log returns. The *same* periods are used for all assets: a period
+#' is resampled as a whole row of `logret`, so the co-movement of the assets
+#' (correlation, joint crashes) is exactly the one observed in history.
+#' Periods are drawn independently of each other, so the average drift is
+#' reproduced but no serial dependence between periods is (no
+#' autocorrelation, no volatility clustering).
 #'
-#' The sum of daily log returns is the horizon log return; exp(.) - 1 turns
+#' The sum of the log returns is the horizon log return; exp(.) - 1 turns
 #' it into a simple return. Returns a matrix n_scenarios x assets.
 simulate_horizon_returns <- function(logret, horizon, n_scenarios, seed) {
   set.seed(seed)

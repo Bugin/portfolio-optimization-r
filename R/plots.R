@@ -6,7 +6,7 @@
 #' optimal portfolios and the allocation line, in the (ES, expected return)
 #' plane at the horizon.
 plot_frontier <- function(rand, frontier_es, frontier_ret, min_es, max_ratio,
-                          asset_ret, asset_es, rf_h, horizon, level) {
+                          asset_ret, asset_es, rf_h, horizon_label, level) {
   # --- Series names and colours (the legend follows this order) -------------
   rf_name <- sprintf("Risk-free (%.2f%%)", rf_h * 100)
   # The strings below use escapes for the en dash (u2013), the plus-minus sign (u00b1)
@@ -68,7 +68,7 @@ plot_frontier <- function(rand, frontier_es, frontier_ret, min_es, max_ratio,
     ggplot2::labs(x = sprintf("Expected Shortfall %s%% at the horizon (loss)",
                               format(level * 100)),
                   y = "Expected return at the horizon",
-                  title = sprintf("Mean\u2013ES frontier, %d-day horizon", horizon)) +
+                  title = sprintf("Mean\u2013ES frontier, %s horizon", horizon_label)) +
     ggplot2::theme_minimal()
 }
 
@@ -78,7 +78,8 @@ plot_frontier <- function(rand, frontier_es, frontier_ret, min_es, max_ratio,
 #'
 #' Each panel spans mean +/- `n_sigma` standard deviations of its own series,
 #' so the shape (skew, fat tails) is readable whatever the volatility.
-plot_distributions <- function(returns, horizon, n_sigma = 4) {
+#' `horizon_label` is the text used in the title, e.g. "60-day".
+plot_distributions <- function(returns, horizon_label, n_sigma = 4) {
   series_names <- colnames(returns)
 
   # --- Build the data: clipped observations and a normal curve per series ---
@@ -108,8 +109,8 @@ plot_distributions <- function(returns, horizon, n_sigma = 4) {
     ggplot2::facet_wrap(~ series, ncol = 3, scales = "free") +
     ggplot2::scale_x_continuous(labels = function(x) paste0(signif(x * 100, 2), "%")) +
     ggplot2::labs(x = NULL, y = NULL,
-                  title = sprintf("Simulated %d-day returns, \u00b1%d\u03c3 per panel (normal fit in grey)",
-                                  horizon, n_sigma)) +
+                  title = sprintf("Simulated %s returns, \u00b1%d\u03c3 per panel (normal fit in grey)",
+                                  horizon_label, n_sigma)) +
     ggplot2::theme_minimal() +
     ggplot2::theme(axis.text.y = ggplot2::element_blank(),
                    axis.ticks.y = ggplot2::element_blank(),

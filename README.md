@@ -11,9 +11,9 @@ reference implementation on identical scenarios (see
 The R Markdown notebook downloads prices (with an on-disk cache) and computes:
 
 - **data and cache**: adjusted daily prices for the four ETFs, cached as RDS;
-- a **bootstrap** that resamples whole historical days over a horizon of 60
-  business days, 10,000 times, giving the joint distribution of the four asset
-  classes at the horizon;
+- a **bootstrap** that resamples whole historical days (or whole weeks, see
+  `RETURN_FREQ`) over a horizon of 60 business days, 10,000 times, giving the
+  joint distribution of the four asset classes at the horizon;
 - **ES at 95%** as the risk measure, reported as a positive loss;
 - the **minimum-ES** portfolio, the **maximum return/ES ratio** portfolio and the
   **mean-ES efficient frontier**, all solved exactly by linear programming
@@ -66,8 +66,9 @@ project folder:
 rmarkdown::render("Asset Allocation EUR.Rmd")
 ```
 
-All tunable parameters (universe, start date, horizon, number of scenarios, ES
-level, risk-free rate, seeds, cache settings) are defined in `R/params.R`. The
+All tunable parameters (universe, start date, horizon, return frequency,
+number of scenarios, ES level, risk-free rate, seeds, cache settings) are
+defined in `R/params.R`. The
 weight bounds are restated in the `parameters` chunk of the `.Rmd`, in `BOUNDS`:
 edit them there and re-knit. Assets not listed get `c(0, 1)`.
 
@@ -99,7 +100,7 @@ install.R                   # package installer
 R/                          # parameters, data, simulation, metrics, optimisation, cloud, stats, plots
 tests/                      # testthat suite, verify_real_data.R, cross_check/ fixtures
 figures/                    # frontier.png, distributions.png
-docs/                       # project-guide.pdf (and .tex): theory, methodology and code walkthrough
+docs/                       # project-guide.pdf (and .tex): theory, methodology and code walkthrough; specs/
 ```
 
 `R/all.R` sources the other files in order; the `.Rmd` calls it from the
@@ -137,6 +138,14 @@ Because the data runs up to the current date, results change from day to day.
   of the four assets. Fat tails, skew and correlations are therefore those of
   the sample; there is no serial dependence (no volatility clustering, no
   momentum).
+- **Daily or weekly resampling** (`RETURN_FREQ`, default `"daily"`). With
+  `"weekly"` the daily log returns are summed within each ISO week and whole
+  weeks are resampled: the dependence inside a week is kept, at the cost of a
+  sample about five times smaller (about 830 weeks instead of 4,000 days).
+  The horizon stays in business days and is converted to weeks (60 days = 12
+  weeks); because of holidays a resampled week has on average slightly fewer
+  than five trading days, so 12 weeks cover about 58 of them. The risk-free
+  rate is still converted with 60/252.
 - **ES is a positive number**: the average loss in the worst `1 - ES_LEVEL` of
   scenarios. VaR in the distribution table is a quantile of returns and is
   usually negative.
@@ -159,7 +168,7 @@ testthat::test_dir("tests/testthat")
 Rscript tests/verify_real_data.R
 ```
 
-The testthat suite has 46 tests (153 expectations) and takes about a minute
+The testthat suite has 52 tests (175 expectations) and takes about a minute
 and a half, most of it in the cross-check. `verify_real_data.R` runs brute-force and
 consistency checks on the real cached data (LP objective against directly
 computed ES, a weight grid that must never beat the LP, bounds respected,
