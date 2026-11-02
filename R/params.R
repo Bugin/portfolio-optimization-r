@@ -16,7 +16,7 @@ N_SCENARIOS <- 10000        # bootstrap paths
 ES_LEVEL <- 0.95            # Expected Shortfall confidence level
 N_RANDOM <- 3000            # random portfolios in the cloud
 DIRICHLET_ALPHA <- 0.5      # weight concentration of the cloud
-N_FRONTIER <- 50            # target returns along the frontier
+N_FRONTIER <- 20            # target returns along the frontier
 RISK_FREE <- 0              # annual
 SIM_SEED <- 42              # bootstrap paths
 CLOUD_SEED <- 7             # random portfolio weights

@@ -413,7 +413,7 @@ an integer and when it is fractional.
 
 The minimum-ES portfolio $\w_{\min}$ solves \eqref{eq:lp} without the target
 constraint. The frontier is the set of solutions of \eqref{eq:lp} with the
-target constraint for a grid of $50$ target returns. The grid runs from the
+target constraint for a grid of $20$ target returns. The grid runs from the
 expected return of $\w_{\min}$ (below it the constraint is not binding and
 the solution would be $\w_{\min}$ again) up to $0.999$ times the maximum
 attainable expected return under the bounds. That maximum is itself a tiny
@@ -807,7 +807,7 @@ Constant & Meaning & Value \\
 \code{ES\_LEVEL}        & confidence level $\alpha$               & 0.95 \\
 \code{N\_RANDOM}        & random portfolios in the cloud          & 3\,000 \\
 \code{DIRICHLET\_ALPHA} & concentration of the random weights     & 0.5 \\
-\code{N\_FRONTIER}      & target returns along the frontier       & 50 \\
+\code{N\_FRONTIER}      & target returns along the frontier       & 20 \\
 \code{RISK\_FREE}       & annual risk-free rate $r_f$             & 0 \\
 \code{SIM\_SEED}, \code{CLOUD\_SEED} & seeds of the two generators & 42, 7 \\
 \code{BOUNDS}           & per-asset $(\ell_i, u_i)$               & $(0,1)$ each \\
@@ -1170,7 +1170,7 @@ contains it). Then:
 \end{enumerate}
 The first run downloads the prices (a few seconds) and creates
 \file{data/cache/}; later runs within 12 hours use the cache. Rendering
-takes about a minute, most of it in the 50 frontier LPs. The HTML and the two PNG files in \file{figures/} are
+takes about half a minute, most of it in the 20 frontier LPs. The HTML and the two PNG files in \file{figures/} are
 overwritten at every run.
 
 \subsection{Common changes}

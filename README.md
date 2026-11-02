@@ -87,8 +87,8 @@ plain R session either install pandoc or point `RSTUDIO_PANDOC` at the folder
 that contains it (RStudio keeps one under `resources/app/bin/quarto/bin/tools`)
 before calling `rmarkdown::render`.
 
-The first run downloads the prices (a few seconds); rendering takes about a
-minute, almost all of it in the 50 linear programs of the frontier (about one
+The first run downloads the prices (a few seconds); rendering takes about
+half a minute, most of it in the 20 linear programs of the frontier (about one
 second each on 10,000 scenarios).
 
 ## Project layout
