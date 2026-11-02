@@ -1,0 +1,157 @@
+\begin{table}[htbp]\centering\small\setlength{\tabcolsep}{3.5pt}
+\caption{Escursione delle metriche e dei pesi nei 13 run mensili, a confronto con l'escursione dovuta al solo seed Monte Carlo (6 seed, stessi dati) alla prima (ott 2025) e all'ultima data (ott 2026). Metriche in \%, pesi in punti percentuali. Run con 100\,000 scenari.}\label{tab:summary}
+\begin{tabular}{lrrrrr}\toprule
+grandezza & min & max & escursione & seed ott 2025 & seed ott 2026 \\\midrule
+\multicolumn{6}{l}{\emph{Rendimenti giornaliero}} \\
+Min-ES: ES 95\,\% & 3.90 & 3.95 & 0.05 & 0.07 & 0.05 \\
+Min-ES: E[R] & 0.42 & 0.49 & 0.07 & 0.02 & 0.03 \\
+Max-ratio: rapporto & 0.165 & 0.180 & 0.015 & 0.005 & 0.005 \\
+Max-ratio: ES 95\,\% & 5.54 & 6.35 & 0.81 & 0.37 & 0.51 \\
+Max-ratio: E[R] & 0.94 & 1.07 & 0.14 & 0.05 & 0.06 \\
+Min-ES: peso Govt & 41.1 & 44.4 & 3.3 & 2.2 & 1.8 \\
+Min-ES: peso IG & 43.0 & 45.8 & 2.8 & 3.5 & 2.6 \\
+Min-ES: peso HY & 10.7 & 14.3 & 3.6 & 1.4 & 2.3 \\
+Min-ES: peso Equity & 0.1 & 1.6 & 1.5 & 0.5 & 0.8 \\
+Max-ratio: peso Govt & 40.1 & 52.2 & 12.2 & 5.2 & 4.2 \\
+Max-ratio: peso IG & 14.1 & 20.3 & 6.2 & 7.6 & 6.1 \\
+Max-ratio: peso HY & 0.0 & 0.0 & 0.0 & 0.7 & 0.0 \\
+Max-ratio: peso Equity & 31.5 & 39.6 & 8.1 & 3.5 & 3.9 \\
+\multicolumn{6}{l}{\emph{Rendimenti settimanale}} \\
+Min-ES: ES 95\,\% & 3.74 & 3.79 & 0.05 & 0.08 & 0.03 \\
+Min-ES: E[R] & 0.36 & 0.42 & 0.06 & 0.01 & 0.01 \\
+Max-ratio: rapporto & 0.146 & 0.162 & 0.016 & 0.009 & 0.006 \\
+Max-ratio: ES 95\,\% & 5.74 & 6.94 & 1.19 & 0.33 & 0.41 \\
+Max-ratio: E[R] & 0.89 & 1.06 & 0.17 & 0.06 & 0.10 \\
+Min-ES: peso Govt & 24.4 & 26.5 & 2.1 & 2.6 & 1.4 \\
+Min-ES: peso IG & 73.5 & 75.6 & 2.1 & 2.6 & 1.4 \\
+Min-ES: peso HY & 0.0 & 0.0 & 0.0 & 0.0 & 0.0 \\
+Min-ES: peso Equity & 0.0 & 0.0 & 0.0 & 0.0 & 0.0 \\
+Max-ratio: peso Govt & 35.0 & 48.5 & 13.5 & 6.3 & 5.8 \\
+Max-ratio: peso IG & 18.3 & 30.5 & 12.2 & 5.7 & 7.9 \\
+Max-ratio: peso HY & 0.0 & 0.0 & 0.0 & 0.0 & 0.0 \\
+Max-ratio: peso Equity & 29.5 & 40.1 & 10.7 & 2.3 & 4.0 \\
+\bottomrule\end{tabular}\end{table}
+
+\begin{table}[htbp]\centering\scriptsize\setlength{\tabcolsep}{3.5pt}
+\caption{Run mensili con rendimenti giornaliero, seed 42. $n$ = periodi nel campione; E[R] ed ES in \%, pesi in \%. Run con 100\,000 scenari.}\label{tab:runs_daily}
+\begin{tabular}{lrrrrrrrrrrrrrr}\toprule
+mese & $n$ & \multicolumn{6}{c}{Min-ES: E[R], ES, pesi Govt/IG/HY/Eq} & \multicolumn{7}{c}{Max-ratio: E[R], ES, rapporto, pesi Govt/IG/HY/Eq} \\\midrule
+2025-10 & 3778 & 0.47 & 3.92 & 41.9 & 45.8 & 11.0 & 1.3 & 0.94 & 5.54 & 0.169 & 48.9 & 19.6 & 0.0 & 31.5 \\
+2025-11 & 3798 & 0.47 & 3.92 & 43.6 & 44.3 & 10.7 & 1.4 & 0.94 & 5.55 & 0.169 & 49.2 & 19.0 & 0.0 & 31.8 \\
+2025-12 & 3817 & 0.47 & 3.94 & 44.0 & 43.4 & 11.1 & 1.5 & 0.97 & 5.75 & 0.169 & 49.7 & 16.9 & 0.0 & 33.4 \\
+2026-01 & 3838 & 0.47 & 3.92 & 43.3 & 43.8 & 11.6 & 1.3 & 0.99 & 5.70 & 0.174 & 46.6 & 19.9 & 0.0 & 33.5 \\
+2026-02 & 3858 & 0.49 & 3.90 & 43.2 & 44.4 & 10.8 & 1.6 & 1.01 & 5.62 & 0.180 & 52.2 & 14.7 & 0.0 & 33.0 \\
+2026-03 & 3880 & 0.44 & 3.94 & 44.4 & 43.0 & 11.7 & 0.9 & 0.97 & 5.91 & 0.165 & 50.6 & 14.1 & 0.0 & 35.3 \\
+2026-04 & 3900 & 0.45 & 3.94 & 42.6 & 45.2 & 11.1 & 1.1 & 1.00 & 5.89 & 0.170 & 46.4 & 18.6 & 0.0 & 35.1 \\
+2026-05 & 3920 & 0.46 & 3.90 & 42.5 & 44.6 & 12.2 & 0.8 & 1.01 & 5.82 & 0.174 & 47.9 & 17.7 & 0.0 & 34.4 \\
+2026-06 & 3942 & 0.47 & 3.91 & 42.7 & 43.8 & 12.7 & 0.8 & 1.02 & 5.79 & 0.176 & 46.2 & 19.7 & 0.0 & 34.1 \\
+2026-07 & 3965 & 0.44 & 3.92 & 41.6 & 44.2 & 13.6 & 0.5 & 1.06 & 6.08 & 0.174 & 44.1 & 19.1 & 0.0 & 36.8 \\
+2026-08 & 3986 & 0.43 & 3.92 & 41.8 & 43.8 & 14.3 & 0.1 & 1.07 & 6.20 & 0.172 & 44.6 & 17.4 & 0.0 & 37.9 \\
+2026-09 & 4008 & 0.42 & 3.94 & 42.0 & 44.1 & 12.6 & 1.3 & 1.07 & 6.35 & 0.168 & 40.1 & 20.3 & 0.0 & 39.6 \\
+2026-10 & 4030 & 0.42 & 3.95 & 41.1 & 44.9 & 13.4 & 0.6 & 1.07 & 6.29 & 0.171 & 41.1 & 19.8 & 0.0 & 39.1 \\
+\bottomrule\end{tabular}\end{table}
+
+\begin{table}[htbp]\centering\scriptsize\setlength{\tabcolsep}{3.5pt}
+\caption{Run mensili con rendimenti settimanale, seed 42. $n$ = periodi nel campione; E[R] ed ES in \%, pesi in \%. Run con 100\,000 scenari.}\label{tab:runs_weekly}
+\begin{tabular}{lrrrrrrrrrrrrrr}\toprule
+mese & $n$ & \multicolumn{6}{c}{Min-ES: E[R], ES, pesi Govt/IG/HY/Eq} & \multicolumn{7}{c}{Max-ratio: E[R], ES, rapporto, pesi Govt/IG/HY/Eq} \\\midrule
+2025-10 & 775 & 0.42 & 3.75 & 25.6 & 74.4 & 0.0 & 0.0 & 0.89 & 5.74 & 0.155 & 40.1 & 30.5 & 0.0 & 29.5 \\
+2025-11 & 779 & 0.41 & 3.77 & 24.9 & 75.1 & 0.0 & 0.0 & 0.89 & 5.90 & 0.150 & 43.4 & 26.0 & 0.0 & 30.5 \\
+2025-12 & 784 & 0.40 & 3.75 & 26.4 & 73.6 & 0.0 & 0.0 & 0.93 & 6.06 & 0.153 & 44.1 & 23.5 & 0.0 & 32.4 \\
+2026-01 & 788 & 0.41 & 3.75 & 26.3 & 73.7 & 0.0 & 0.0 & 0.96 & 6.10 & 0.157 & 48.3 & 18.7 & 0.0 & 33.0 \\
+2026-02 & 792 & 0.42 & 3.76 & 25.9 & 74.1 & 0.0 & 0.0 & 0.99 & 6.10 & 0.162 & 48.5 & 18.3 & 0.0 & 33.2 \\
+2026-03 & 797 & 0.37 & 3.79 & 26.2 & 73.8 & 0.0 & 0.0 & 0.92 & 6.29 & 0.146 & 46.0 & 20.1 & 0.0 & 33.9 \\
+2026-04 & 801 & 0.40 & 3.77 & 25.4 & 74.6 & 0.0 & 0.0 & 0.96 & 6.25 & 0.154 & 42.5 & 23.8 & 0.0 & 33.8 \\
+2026-05 & 805 & 0.40 & 3.77 & 24.4 & 75.6 & 0.0 & 0.0 & 0.99 & 6.33 & 0.156 & 45.3 & 20.2 & 0.0 & 34.5 \\
+2026-06 & 810 & 0.41 & 3.75 & 26.2 & 73.8 & 0.0 & 0.0 & 0.97 & 6.11 & 0.159 & 43.1 & 24.1 & 0.0 & 32.8 \\
+2026-07 & 814 & 0.39 & 3.75 & 24.7 & 75.3 & 0.0 & 0.0 & 1.03 & 6.54 & 0.157 & 40.9 & 22.5 & 0.0 & 36.6 \\
+2026-08 & 819 & 0.38 & 3.74 & 26.5 & 73.5 & 0.0 & 0.0 & 1.04 & 6.53 & 0.159 & 42.4 & 20.5 & 0.0 & 37.1 \\
+2026-09 & 823 & 0.36 & 3.79 & 24.7 & 75.3 & 0.0 & 0.0 & 1.06 & 6.94 & 0.152 & 36.3 & 23.6 & 0.0 & 40.1 \\
+2026-10 & 827 & 0.36 & 3.78 & 24.7 & 75.3 & 0.0 & 0.0 & 1.04 & 6.92 & 0.151 & 35.0 & 25.5 & 0.0 & 39.5 \\
+\bottomrule\end{tabular}\end{table}
+
+\begin{table}[htbp]\centering\footnotesize\setlength{\tabcolsep}{3.5pt}
+\caption{Stessi dati (fino al 30 ott 2026), sei seed del bootstrap: la variabilit\`a dovuta al solo campionamento Monte Carlo. Run con 100\,000 scenari.}\label{tab:seeds}
+\begin{tabular}{lrrlrrl}\toprule
+freq. & seed & Min-ES: ES & pesi & Max-ratio: rapporto & ES & pesi \\\midrule
+giornaliero & 1 & 3.96 & 42.8/44.8/12.0/0.5 & 0.166 & 6.68 & 39.4/18.7/0.0/41.9 \\
+giornaliero & 2 & 3.97 & 42.0/45.0/11.8/1.2 & 0.169 & 6.22 & 42.4/19.6/0.0/38.0 \\
+giornaliero & 3 & 3.99 & 42.9/43.8/12.5/0.8 & 0.167 & 6.58 & 42.3/16.3/0.0/41.4 \\
+giornaliero & 4 & 3.95 & 42.4/44.5/11.9/1.3 & 0.169 & 6.17 & 39.6/22.3/0.0/38.1 \\
+giornaliero & 5 & 3.96 & 41.4/46.4/11.1/1.2 & 0.171 & 6.40 & 43.7/16.3/0.0/40.0 \\
+giornaliero & 42 & 3.95 & 41.1/44.9/13.4/0.6 & 0.171 & 6.29 & 41.1/19.8/0.0/39.1 \\
+settimanale & 1 & 3.76 & 25.5/74.5/0.0/0.0 & 0.149 & 6.81 & 30.2/31.0/0.0/38.8 \\
+settimanale & 2 & 3.79 & 25.2/74.8/0.0/0.0 & 0.151 & 7.09 & 36.0/23.1/0.0/40.9 \\
+settimanale & 3 & 3.79 & 26.0/74.0/0.0/0.0 & 0.151 & 6.80 & 35.2/25.8/0.0/39.0 \\
+settimanale & 4 & 3.77 & 25.4/74.6/0.0/0.0 & 0.145 & 6.68 & 32.1/31.0/0.0/36.9 \\
+settimanale & 5 & 3.76 & 25.4/74.6/0.0/0.0 & 0.149 & 6.73 & 31.5/30.7/0.0/37.8 \\
+settimanale & 42 & 3.78 & 24.7/75.3/0.0/0.0 & 0.151 & 6.92 & 35.0/25.5/0.0/39.5 \\
+\bottomrule\end{tabular}\end{table}
+
+\begin{table}[htbp]\centering\footnotesize\setlength{\tabcolsep}{3.5pt}
+\caption{Costo di usare i pesi di un mese sugli scenari del mese successivo e sugli scenari finali (ott 2026): differenza fra la metrica dei pesi ``vecchi'' e l'ottimo di quel mese. ES in punti percentuali, rapporto in valore assoluto. Run con 100\,000 scenari.}\label{tab:cross}
+\begin{tabular}{llrrrr}\toprule
+freq. & pesi del mese & $\Delta$ES, mese dopo & $\Delta$rapp., mese dopo & $\Delta$ES, finale & $\Delta$rapp., finale \\\midrule
+giornaliero & 2025-10 & +0.001 & -0.0000 & +0.002 & -0.0016 \\
+giornaliero & 2025-11 & +0.000 & -0.0001 & +0.003 & -0.0015 \\
+giornaliero & 2025-12 & +0.000 & -0.0000 & +0.004 & -0.0010 \\
+giornaliero & 2026-01 & +0.000 & -0.0002 & +0.002 & -0.0008 \\
+giornaliero & 2026-02 & +0.001 & -0.0001 & +0.003 & -0.0013 \\
+giornaliero & 2026-03 & +0.001 & -0.0001 & +0.003 & -0.0007 \\
+giornaliero & 2026-04 & +0.000 & -0.0000 & +0.002 & -0.0005 \\
+giornaliero & 2026-05 & +0.000 & -0.0000 & +0.001 & -0.0007 \\
+giornaliero & 2026-06 & +0.000 & -0.0002 & +0.001 & -0.0006 \\
+giornaliero & 2026-07 & +0.000 & -0.0000 & +0.000 & -0.0001 \\
+giornaliero & 2026-08 & +0.002 & -0.0001 & +0.001 & -0.0001 \\
+giornaliero & 2026-09 & +0.001 & -0.0000 & +0.001 & -0.0000 \\
+giornaliero & 2026-10 & -- & -- & +0.000 & +0.0000 \\
+settimanale & 2025-10 & +0.000 & -0.0000 & +0.000 & -0.0016 \\
+settimanale & 2025-11 & +0.000 & -0.0001 & +0.000 & -0.0015 \\
+settimanale & 2025-12 & +0.000 & -0.0000 & +0.001 & -0.0010 \\
+settimanale & 2026-01 & +0.000 & -0.0000 & +0.000 & -0.0012 \\
+settimanale & 2026-02 & +0.000 & -0.0000 & +0.000 & -0.0012 \\
+settimanale & 2026-03 & +0.000 & -0.0000 & +0.000 & -0.0008 \\
+settimanale & 2026-04 & +0.000 & -0.0000 & +0.000 & -0.0007 \\
+settimanale & 2026-05 & +0.001 & -0.0000 & +0.000 & -0.0007 \\
+settimanale & 2026-06 & +0.000 & -0.0002 & +0.000 & -0.0009 \\
+settimanale & 2026-07 & +0.001 & -0.0000 & +0.000 & -0.0002 \\
+settimanale & 2026-08 & +0.001 & -0.0002 & +0.001 & -0.0002 \\
+settimanale & 2026-09 & +0.000 & -0.0000 & +0.000 & -0.0000 \\
+settimanale & 2026-10 & -- & -- & +0.000 & +0.0000 \\
+\bottomrule\end{tabular}\end{table}
+
+\begin{table}[htbp]\centering\scriptsize\setlength{\tabcolsep}{3.5pt}
+\caption{Cosa ha aggiunto ogni mese al campione: rendimento del mese per asset (\%), peggior giorno (\%) e numero di giorni sotto il 5\textsuperscript{o} percentile storico dei rendimenti giornalieri (Govt/IG/HY/Equity). Run con 100\,000 scenari.}\label{tab:added}
+\begin{tabular}{lrrrrrrrrrl}\toprule
+mese & giorni & \multicolumn{4}{c}{rendimento: Govt, IG, HY, Eq} & \multicolumn{4}{c}{peggior giorno} & giorni in coda \\\midrule
+2025-11 & 20 & -0.1 & -0.1 & +0.4 & +0.8 & -0.3 & -0.3 & -0.2 & -1.8 & 0/0/0/1 \\
+2025-12 & 19 & -0.5 & -0.2 & +0.5 & +2.7 & -0.4 & -0.4 & -0.1 & -0.6 & 0/1/0/0 \\
+2026-01 & 21 & +0.5 & +0.8 & +0.3 & +3.3 & -0.5 & -0.2 & -0.2 & -1.3 & 0/0/0/0 \\
+2026-02 & 20 & +1.5 & +0.5 & +0.0 & +3.8 & -0.2 & -0.1 & -0.1 & -0.9 & 0/0/0/0 \\
+2026-03 & 22 & -2.7 & -2.3 & -2.4 & -7.6 & -0.8 & -0.7 & -0.8 & -3.0 & 5/7/4/4 \\
+2026-04 & 20 & +0.3 & +1.0 & +2.0 & +5.4 & -0.8 & -0.6 & -0.3 & -1.0 & 1/2/0/0 \\
+2026-05 & 20 & +1.1 & +0.9 & +1.0 & +3.0 & -0.7 & -0.4 & -0.3 & -1.8 & 1/1/0/1 \\
+2026-06 & 22 & +0.5 & +0.4 & +0.5 & +2.8 & -0.5 & -0.3 & -0.2 & -0.7 & 0/0/0/0 \\
+2026-07 & 23 & -1.8 & -1.0 & -0.4 & +1.2 & -0.7 & -0.5 & -0.4 & -1.6 & 1/1/0/0 \\
+2026-08 & 21 & -0.6 & -0.3 & +0.4 & +0.4 & -0.5 & -0.3 & -0.2 & -0.8 & 0/0/0/0 \\
+2026-09 & 22 & -2.1 & -1.3 & -1.4 & -2.3 & -0.7 & -0.5 & -0.5 & -1.4 & 4/2/2/0 \\
+2026-10 & 22 & +1.1 & +1.0 & -0.6 & +1.9 & -0.5 & -0.3 & -0.4 & -1.3 & 0/0/0/0 \\
+\bottomrule\end{tabular}\end{table}
+
+\begin{table}[htbp]\centering\small\setlength{\tabcolsep}{3.5pt}
+\caption{Correlazioni dei log-rendimenti a frequenza giornaliera e settimanale, alla prima e all'ultima data. Run con 100\,000 scenari.}\label{tab:corr}
+\begin{tabular}{llrrrrrrr}\toprule
+freq. & data & $n$ & Govt--IG & Govt--HY & Govt--Eq & IG--HY & IG--Eq & HY--Eq \\\midrule
+giornaliero & 2025-10 & 3778 & 0.67 & 0.21 & 0.05 & 0.57 & 0.27 & 0.62 \\
+giornaliero & 2026-10 & 4030 & 0.68 & 0.22 & 0.08 & 0.57 & 0.28 & 0.62 \\
+settimanale & 2025-10 & 775 & 0.68 & 0.21 & 0.13 & 0.64 & 0.41 & 0.70 \\
+settimanale & 2026-10 & 827 & 0.69 & 0.22 & 0.15 & 0.64 & 0.42 & 0.69 \\
+\bottomrule\end{tabular}\end{table}
+
+\begin{table}[htbp]\centering\small\setlength{\tabcolsep}{3.5pt}
+\caption{Statistiche dei singoli asset all'orizzonte (60 giorni, scenari del run di ott 2026, seed 42), in \%. Run con 100\,000 scenari.}\label{tab:assets}
+\begin{tabular}{lrrrrrrrrrrrr}\toprule
+freq. & \multicolumn{4}{c}{E[R]: Govt, IG, HY, Eq} & \multicolumn{4}{c}{dev. std} & \multicolumn{4}{c}{ES 95\,\%} \\\midrule
+giornaliero & 0.33 & 0.40 & 0.67 & 2.19 & 2.47 & 2.02 & 3.14 & 8.09 & 4.74 & 4.21 & 6.47 & 14.06 \\
+settimanale & 0.32 & 0.38 & 0.68 & 2.11 & 2.37 & 1.88 & 3.36 & 7.77 & 4.66 & 3.89 & 7.39 & 14.95 \\
+\bottomrule\end{tabular}\end{table}

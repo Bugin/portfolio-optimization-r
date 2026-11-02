@@ -1,0 +1,227 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[italian]{babel}
+\usepackage[margin=2.3cm]{geometry}
+\usepackage{graphicx,booktabs,amsmath,array}
+\usepackage[hidelinks]{hyperref}
+\usepackage{helvet}
+\renewcommand{\familydefault}{\sfdefault}
+\setlength{\parskip}{4pt}
+\setlength{\parindent}{0pt}
+
+% Measured notebook times (seconds), filled from notebook_timing.R.
+\newcommand{\nbTenFifty}{51}
+\newcommand{\nbTenTwenty}{24}
+\newcommand{\nbHundredFifty}{4\,520}
+\newcommand{\nbHundredFiftyMin}{75}
+\newcommand{\nbHundredFrontier}{72}
+\newcommand{\nbHundredTwenty}{circa 29 minuti}
+
+\title{Stabilit\`a dell'asset allocation nel tempo\\
+\large Tredici run mensili, ottobre 2025 -- ottobre 2026, rendimenti giornalieri e settimanali,\\ con 10\,000 e con 100\,000 scenari}
+\author{Progetto \texttt{portfolio-optimization-r}}
+\date{2 novembre 2026}
+
+\begin{document}
+\maketitle
+
+\section*{Sintesi}
+
+Il tool \`e stato rieseguito a tredici date di fine mese, dal 31 ottobre 2025 al 30 ottobre 2026, ogni volta con tutta la storia disponibile fino a quella data, prima con rendimenti giornalieri e poi con rendimenti settimanali. L'esperimento \`e stato fatto due volte: con 10\,000 scenari bootstrap per run, il valore di default del tool, e con 100\,000. Per distinguere i cambiamenti dovuti ai dati da quelli dovuti al caso, alla prima e all'ultima data il bootstrap \`e stato ripetuto con sei seed diversi, a entrambi i livelli. I risultati principali sono quelli a 100\,000 scenari; quelli a 10\,000 servono a misurare cosa il rumore Monte Carlo nasconde e cosa inventa, e cosa costa toglierlo.
+
+\begin{itemize}
+\item \textbf{Le metriche di portafoglio sono stabili, a entrambi i livelli.} Con 100\,000 scenari l'ES del portafoglio Min-ES si muove in un intervallo di 0,05 punti percentuali nell'anno, lo stesso che si ottiene cambiando solo il seed. Il rapporto rendimento/ES del Max-ratio oscilla di 0,015--0,016 contro 0,005--0,009 di rumore: il movimento residuo ha una struttura leggibile (massimo a febbraio 2026, minimo a marzo, recupero fino a giugno) ed \`e spiegato dai dati.
+\item \textbf{I pesi sono stabili solo con 100\,000 scenari.} A 10\,000 i pesi del Min-ES giornaliero oscillano di 6--12 punti e la ripartizione Govt/IG del Max-ratio di 15--25, ma altrettanto oscillano cambiando seed: quel movimento \`e rumore nella valle piatta dell'ES fra Euro Govt ed Euro Corp IG (4 centesimi di punto fra 20\,\% e 50\,\% di Govt). A 100\,000 scenari ogni peso del Min-ES si muove di 1,5--3,6 punti nell'anno, contro 0,5--3,5 di rumore, e la ripartizione Govt/IG del Max-ratio \`e determinata entro 4--8 punti. Il costo di usare i pesi del mese precedente non supera 0,004 punti di ES.
+\item \textbf{Un cambiamento \`e genuino:} nel Max-ratio il peso azionario sale da 31,5\,\% a 39\,\% (giornaliero) e da 29,5\,\% a 39,5\,\% (settimanale), con rumore di 4 punti, a spese dei governativi (da 49\,\% a 41\,\% e da 40\,\% a 35\,\%); l'ES del portafoglio sale di conseguenza da 5,5\,\% a 6,3\,\% e da 5,7\,\% a 6,9\,\%. Lo spiegano i dati dell'anno: rendimento atteso dell'azionario in aumento e rendimento atteso dei governativi in calo, con tre mesi negativi per i governativi (marzo, luglio, settembre 2026). Questo cambiamento era visibile anche a 10\,000 scenari.
+\item \textbf{Due eventi lasciano un'impronta visibile:} la correzione di marzo 2026 (azionario $-7{,}7\,\%$, tutti e quattro gli asset negativi) abbassa il rapporto del Max-ratio di 0,015--0,016 in un mese, tre volte il rumore; settembre 2026 (ancora tutti negativi, governativi $-2{,}1\,\%$) porta il rendimento atteso del Min-ES al minimo dell'anno e l'ES del Max-ratio al massimo.
+\item \textbf{Giornaliero e settimanale raccontano la stessa storia con pesi diversi.} Con i rendimenti settimanali l'IG risulta meno rischioso e l'HY pi\`u rischioso e meno diversificante (effetto dell'autocorrelazione intra-settimanale e delle chiusure asincrone), quindi il Min-ES settimanale \`e sempre 73--76\,\% IG senza HY n\'e azioni, mentre quello giornaliero tiene 11--14\,\% di HY.
+\item \textbf{Costo di calcolo.} Ogni portafoglio ottimo \`e la soluzione di un LP (\emph{linear program}, programma lineare: il problema di ottimizzazione in cui l'ES, grazie alla formulazione di Rockafellar e Uryasev, diventa una funzione lineare dei pesi e di una variabile ausiliaria per scenario). Il tempo di un LP cresce quasi col quadrato del numero di scenari: da 0,6--0,8 secondi a 10\,000 a 52--68 secondi a 100\,000. Lo studio (92 LP) \`e passato da 66 secondi a 94 minuti; il notebook completo, misurato, da \nbTenFifty{} secondi a \nbHundredFiftyMin{} minuti, di cui 72 nei 50 LP della frontiera. Il rumore sulle grandezze ben determinate si \`e ridotto di 2,5--5 volte, in linea con la radice di dieci; la posizione del Max-ratio lungo la frontiera (ES, peso azionario) resta invece rumorosa di 0,4--0,5 punti di ES e 4 punti di peso. \textbf{Decisione presa a valle dello studio:} il default del tool resta 10\,000 scenari, e i punti di frontiera passano da 50 a 20 (notebook da \nbTenFifty{} a \nbTenTwenty{} secondi).
+\end{itemize}
+
+\section{Metodo}
+
+\paragraph{Dati.} Prezzi aggiustati di Yahoo Finance dalla cache del repository scaricata il 2 novembre 2026: EUNH.DE (Euro Govt), EUN5.DE (Euro Corp IG), EUNW.DE (Euro Corp HY), EXSA.DE (Europe Equity), campione comune dal 15 dicembre 2010 al 30 ottobre 2026, 4\,030 rendimenti giornalieri. Si usa un'unica serie, troncata a ogni data di analisi: ci\`o che il tool avrebbe visto a quella data, salvo le piccole revisioni retroattive che Yahoo applica alle serie aggiustate.
+
+\paragraph{Date.} Ultimo giorno di borsa di ogni mese da ottobre 2025 a ottobre 2026: tredici run. Il campione passa da 3\,778 a 4\,030 rendimenti giornalieri (da 775 a 827 settimanali); ogni mese aggiunge 19--23 giorni, circa lo 0,5\,\% del campione.
+
+\paragraph{Ottimizzazione.} Il tool calcola ogni portafoglio ottimo risolvendo un programma lineare (LP). L'ES non \`e lineare nei pesi, perch\'e quali scenari siano ``i peggiori'' dipende dai pesi stessi; Rockafellar e Uryasev (2000) mostrano che, aggiungendo una variabile per la soglia (il VaR) e una variabile ausiliaria per ogni scenario, pari all'eccedenza della perdita sulla soglia, minimizzare l'ES diventa un problema lineare: le incognite sono i quattro pesi, la soglia e $N$ variabili ausiliarie, i vincoli sono la somma dei pesi, i limiti per asset e un vincolo per scenario. Il Min-ES \`e questo problema; il Max-ratio lo stesso con una normalizzazione in pi\`u (Charnes e Cooper); ogni punto della frontiera \`e il Min-ES con un vincolo aggiuntivo sul rendimento atteso. Li risolve HiGHS, tramite il pacchetto R \texttt{highs}, in modo esatto. La taglia del problema cresce con $N$: \`e la ragione dei tempi della sezione~\ref{sec:perf}.
+
+\paragraph{Pipeline.} Per ogni data e frequenza: aggregazione (identit\`a per il giornaliero, somma per settimana ISO per il settimanale), bootstrap di $N$ scenari su 60 giorni di borsa (12 settimane nel caso settimanale), ES al 95\,\%, portafoglio Min-ES e portafoglio Max-ratio con i vincoli di default (ogni asset fra 0 e 100\,\%, nessuna leva, tasso privo di rischio zero). Tutti gli altri parametri sono quelli di \texttt{R/params.R}, seed 42; $N$ vale 10\,000 nel primo esperimento e 100\,000 nel secondo, passato da riga di comando. \textbf{La frontiera e la nuvola casuale non sono state ricalcolate:} sono illustrative e non entrano nelle metriche, quindi ogni run dello studio costa una simulazione e due LP, contro i 2 + 50 LP del notebook. Questo spiega perch\'e 46 run a 100\,000 scenari (sezione~\ref{sec:perf}) costano il doppio di un solo run del notebook.
+
+\paragraph{Misura del rumore.} Con lo stesso seed, un campione pi\`u lungo di un mese produce estrazioni diverse, quindi la differenza fra due run consecutivi mescola l'effetto dei dati nuovi e quello di un nuovo sorteggio. Per avere un metro, alla prima e all'ultima data i run sono stati ripetuti con i seed 1, 2, 3, 4, 5 e 42 a dati fissi: l'escursione fra i sei run \`e il rumore Monte Carlo puro. Un cambiamento mensile \`e considerato ``maggiore'' se supera chiaramente questa escursione. L'escursione di sei estrazioni \`e a sua volta una stima grossolana (pu\`o variare di un terzo da un gruppo di seed all'altro), quindi i confronti vanno letti come ordini di grandezza.
+
+\paragraph{Valutazione incrociata.} I pesi ottimi di ogni mese sono stati valutati sugli scenari del mese successivo e su quelli finali, confrontando ES e rapporto con l'ottimo di quegli scenari: \`e il costo di non aggiornare l'allocazione.
+
+\paragraph{Prestazioni.} \texttt{benchmark.R} misura, a dati fissi (ottobre 2026, giornaliero), il tempo di simulazione, dei due LP e di un punto di frontiera a 10\,000, 25\,000, 50\,000 e 100\,000 scenari, due ripetizioni ciascuno; la tabella riporta il minimo delle due, perch\'e la prima misura a 10\,000 include il riscaldamento di R e di HiGHS (2,6 secondi contro 0,6). \texttt{notebook\_timing.R} esegue invece gli stessi passi del notebook (dati, simulazione, nuvola casuale, due LP, frontiera, grafici, distribuzioni) cronometrandoli uno per uno, con numero di scenari e punti di frontiera a scelta.
+
+\paragraph{Riproducibilit\`a.} Script \texttt{stability\_runs.R} con argomento 10000 (66 secondi) o 100000 (94 minuti), risultati in \texttt{out\_10k/} e \texttt{out\_100k/}; \texttt{benchmark.R}; \texttt{notebook\_timing.R}; tabelle e figure da \texttt{make\_tables.py} e \texttt{make\_figures.py} con argomento \texttt{10k} o \texttt{100k}; tutto nella cartella \texttt{stability/} del progetto.
+
+\section{Risultati in sintesi}
+
+Le tabelle~\ref{tab:summary} e~\ref{tab:summary_10k} confrontano, per ogni grandezza, l'escursione nei tredici run con quella dovuta al solo seed, a 100\,000 e a 10\,000 scenari. Le figure~\ref{fig:weights} e~\ref{fig:weights_10k} mostrano i pesi mensili ai due livelli, con il rumore sovrapposto; la figura~\ref{fig:metrics} le metriche a 100\,000. Le tabelle di dettaglio (run mensili, seed, valutazione incrociata, cosa ha aggiunto ogni mese, correlazioni, statistiche degli asset) sono quelle a 100\,000 scenari.
+
+\input{tables_100k_summary.tex}
+
+\input{tables_10k_summary.tex}
+
+\begin{figure}[htbp]\centering
+\includegraphics[width=\textwidth]{figures_100k/weights}
+\caption{Pesi dei due portafogli ottimi a ogni data, 100\,000 scenari. Le barre spesse alla prima e all'ultima data sono l'intervallo dei pesi sui sei seed a dati fissi.}
+\label{fig:weights}
+\end{figure}
+
+\begin{figure}[htbp]\centering
+\includegraphics[width=\textwidth]{figures_10k/weights}
+\caption{Gli stessi pesi con 10\,000 scenari. Le oscillazioni mensili e le barre del rumore sono della stessa ampiezza: a questo livello i pesi non distinguono i dati dal sorteggio.}
+\label{fig:weights_10k}
+\end{figure}
+
+\begin{figure}[htbp]\centering
+\includegraphics[width=\textwidth]{figures_100k/metrics}
+\caption{Metriche dei due portafogli a ogni data, 100\,000 scenari; le bande sono l'intervallo sui sei seed alla data finale.}
+\label{fig:metrics}
+\end{figure}
+
+\section{Il portafoglio Min-ES}
+
+\subsection{Giornaliero}
+
+L'ES resta fra 3,90\,\% e 3,95\,\%: la sua escursione annua (0,05 punti) coincide con quella sui seed (0,05--0,07). Il rendimento atteso invece ha un andamento chiaro: sale fino a 0,49\,\% a febbraio 2026, scende a 0,44\,\% a marzo e poi gradualmente a 0,42\,\% a ottobre. L'escursione (0,07) \`e il triplo del rumore (0,02--0,03), e segue i dati: il rendimento atteso a 60 giorni dei governativi passa da 0,40\,\% a 0,33\,\% e quello dell'IG da 0,44\,\% a 0,40\,\% (tabella~\ref{tab:runs_daily} e figura~\ref{fig:assets}). A 10\,000 scenari lo stesso calo c'era (0,47 $\to$ 0,41\,\%), ma con un rumore di 0,04 era al limite del rilevabile.
+
+I pesi sono fermi: Govt 41--44\,\%, IG 43--46\,\%, HY 11--14\,\%, azionario 0--1,6\,\%, con escursioni annue (3,3, 2,8, 3,6 e 1,5 punti) poco sopra quelle sui seed (1,8--2,2, 2,6--3,5, 1,4--2,3 e 0,5--0,8). L'unico movimento con una direzione \`e la lenta crescita dell'HY da 11\,\% a 14\,\% fra maggio e agosto 2026, quando l'ES dell'HY scende da 6,57\,\% a 6,47\,\%, e la contemporanea discesa dell'azionario sotto l'1\,\%. Il costo di non aggiornare i pesi (tabella~\ref{tab:cross}) non supera 0,002 punti di ES sul mese successivo e 0,004 sugli scenari finali: tutti i tredici vettori di pesi sono equivalenti entro il rumore.
+
+Con 10\,000 scenari il quadro era diverso (figura~\ref{fig:weights_10k}): Govt 42--48\,\%, IG 38--50\,\%, HY 5--15\,\%, e fra gennaio e febbraio 2026 un salto dell'IG da 49,8\,\% a 39,9\,\% e dell'HY da 4,9\,\% a 12,6\,\%, in un mese di dati tranquilli. Con 100\,000 scenari l'IG passa da 43,8\,\% a 44,4\,\% e l'HY da 11,6\,\% a 10,9\,\%: quel salto era rumore Monte Carlo. La ragione \`e nella figura~\ref{fig:segment}: lungo il segmento Govt/IG l'ES ha un minimo largo, con 4 centesimi di punto di differenza fra 20\,\% e 50\,\% di Govt, e un errore di stima dell'ES di 0,1 punti (quello di 10\,000 scenari) basta a spostare l'argmin di dieci punti. Con un errore di 0,03--0,05 punti l'argmin si sposta di due o tre.
+
+\begin{figure}[htbp]\centering
+\includegraphics[width=0.75\textwidth]{figures_100k/segment}
+\caption{ES a 60 giorni dei portafogli composti solo da Govt e IG, dati a ottobre 2026, 100\,000 scenari. Il minimo \`e una valle: fra 20\,\% e 50\,\% di Govt l'ES giornaliero varia di 0,04 punti.}
+\label{fig:segment}
+\end{figure}
+
+\subsection{Settimanale}
+
+Il Min-ES settimanale \`e il risultato pi\`u stabile dello studio: ES 3,74--3,79\,\% (escursione 0,05, rumore 0,03--0,08), Govt 24--27\,\% e IG 73--76\,\% (escursione 2 punti, rumore 1--3), HY e azionario a zero in tutti i tredici run e in tutti i dodici run con seed diversi, a entrambi i livelli di scenari. I vincoli di non negativit\`a sono attivi su due asset, il che toglie due gradi di libert\`a all'ottimo e lo irrigidisce. La valle resta piatta anche qui (ES fra 3,78\,\% e 3,82\,\% per Govt fra 10\,\% e 40\,\%), e il costo di non aggiornare i pesi non supera 0,001 punti.
+
+Il rendimento atteso scende da 0,42\,\% a 0,36\,\% (rumore 0,01): lo stesso calo dei governativi visto nel giornaliero, con i due gradini di marzo e di settembre 2026 (settembre: $-2{,}1\,\%$ per il Govt con quattro giorni in coda; tabella~\ref{tab:added}).
+
+\section{Il portafoglio Max-ratio}
+
+\subsection{Il rapporto \`e stabile, l'ES cresce}
+
+Giornaliero: rapporto 0,165--0,180, escursione 0,015 contro 0,005 di rumore. Settimanale: 0,146--0,162, escursione 0,016 contro 0,006--0,009. Il movimento \`e quindi in parte reale, ma non \`e un trend: nelle due frequenze il rapporto sale fino a febbraio 2026, crolla a marzo, risale fino a giugno e cala di nuovo a settembre, e a ottobre 2026 (0,171 e 0,151) \`e vicino a dove era a ottobre 2025 (0,169 e 0,155). La qualit\`a del miglior portafoglio non \`e cambiata nell'anno; \`e cambiato il portafoglio. A 10\,000 scenari il profilo era lo stesso, ma con un rumore di 0,013--0,016 non si distingueva dall'escursione (0,013--0,018).
+
+L'ES del Max-ratio infatti sale in modo netto: da 5,54\,\% a 6,29\,\% nel giornaliero (escursione 0,81, rumore 0,4--0,5) e da 5,74\,\% a 6,92\,\% nel settimanale (1,19 contro 0,3--0,4), con i due gradini di marzo e di luglio--settembre 2026 (figura~\ref{fig:metrics}). Il rendimento atteso sale in parallelo (0,94 $\to$ 1,07\,\% e 0,89 $\to$ 1,04\,\%). Il portafoglio a rapporto massimo si \`e spostato lungo la frontiera verso un punto pi\`u rischioso e pi\`u redditizio, a rapporto quasi invariato.
+
+\subsection{Il peso azionario cresce, i governativi calano: un cambiamento genuino}
+
+Il peso dell'azionario nel Max-ratio sale da 31,5\,\% a 39,1\,\% nel giornaliero (escursione 8,1 punti, rumore 3,5--3,9) e da 29,5\,\% a 39,5\,\% nel settimanale (10,7 contro 2,3--4,0), con un andamento quasi monotono (figura~\ref{fig:weights}). Lo specchio \`e il peso dei governativi: da 48,9\,\% (52,2\,\% a febbraio) a 41,1\,\% nel giornaliero e da 40,1\,\% (48,5\,\% a febbraio) a 35,0\,\% nel settimanale, con escursioni di 12--13 punti contro 4--6 di rumore. L'IG \`e fermo (giornaliero 14--20\,\%, settimanale 18--31\,\%, rumore 6--8). Sono gli unici pesi con un trend chiaro sopra il rumore, e hanno una spiegazione nei dati (figura~\ref{fig:assets}, tabella~\ref{tab:added}):
+
+\begin{itemize}
+\item il rendimento atteso a 60 giorni dell'azionario passa da 2,08\,\% a 2,19\,\% (giornaliero), per i mesi forti da novembre 2025 a febbraio 2026 ($+0{,}8$, $+2{,}7$, $+3{,}3$, $+3{,}9\,\%$) e da aprile a giugno 2026 ($+5{,}4$, $+3{,}1$, $+2{,}8\,\%$), mentre il suo ES scende da 14,5\,\% a 14,1\,\%;
+\item il rendimento atteso dei governativi scende da 0,40\,\% a 0,33\,\% e il loro ES non migliora (4,72 $\to$ 4,74\,\%), per i tre mesi negativi del 2026 (marzo $-2{,}7\,\%$, luglio $-1{,}8\,\%$, settembre $-2{,}1\,\%$).
+\end{itemize}
+
+Un rendimento azionario migliore a parit\`a di coda, contro governativi con meno rendimento e la stessa coda, sposta il massimo del rapporto verso l'azionario. L'ES complessivo cresce perch\'e l'azionario \`e l'asset con la coda pi\`u pesante. Il trend dell'azionario era visibile anche a 10\,000 scenari (31 $\to$ 40\,\% e 27 $\to$ 40\,\%); quello dei governativi no, perch\'e sepolto dal rumore sulla ripartizione Govt/IG.
+
+\begin{figure}[htbp]\centering
+\includegraphics[width=\textwidth]{figures_100k/assets}
+\caption{Rendimento atteso ed ES a 60 giorni di ciascun asset a ogni data, 100\,000 scenari: la materia prima delle ottimizzazioni.}
+\label{fig:assets}
+\end{figure}
+
+\subsection{Govt contro IG: determinato, entro 5--8 punti}
+
+Con 10\,000 scenari la ripartizione della parte obbligazionaria del Max-ratio fra Govt e IG era indeterminata: l'escursione sui seed (23 e 27 punti nel giornaliero) superava quella nell'anno, e il run con seed 42 dava IG fra 1\,\% e 14\,\% (figura~\ref{fig:weights_10k}). Con 100\,000 scenari l'escursione sui seed scende a 4--8 punti in entrambe le frequenze, e i sei seed alla data finale concordano su Govt 39--44\,\% e IG 16--22\,\% (giornaliero), Govt 30--36\,\% e IG 23--31\,\% (settimanale). La ripartizione \`e quindi determinata, con un'incertezza di qualche punto, e la lettura cambia: i livelli di IG del run a 10\,000 scenari (1--14\,\% nel giornaliero) erano un'estrazione sfortunata, non una propriet\`a dei dati. Ci\`o che resta vero \`e che la somma Govt+IG \`e la grandezza meglio determinata (giornaliero 60--69\,\%, settimanale 60--71\,\%, in calo nell'anno come specchio dell'azionario).
+
+\subsection{Marzo 2026}
+
+\`E il solo mese in cui una metrica si muove in un colpo solo di tre volte il rumore: il rapporto giornaliero scende da 0,180 a 0,165 ($-0{,}015$) e quello settimanale da 0,162 a 0,146 ($-0{,}016$). Marzo 2026 ha aggiunto 22 giorni con tutti e quattro gli asset in perdita (Govt $-2{,}7\,\%$, IG $-2{,}3\,\%$, HY $-2{,}4\,\%$, azionario $-7{,}7\,\%$ con un giorno a $-3{,}0\,\%$) e fra 4 e 7 giorni per asset sotto il 5\textsuperscript{o} percentile storico, cio\`e il 2--4\,\% in pi\`u di osservazioni in coda in un mese. Il rendimento atteso di tutti gli asset cala e l'ES sale (figura~\ref{fig:assets}), e il rapporto segue. Nei mesi successivi il rapporto risale, perch\'e aprile--giugno 2026 aggiungono mesi positivi che diluiscono la coda. Febbraio 2026 era il massimo dell'anno dopo quattro mesi consecutivi positivi per l'azionario: parte della discesa \`e ritorno verso la media.
+
+\subsection{Settembre--ottobre 2026}
+
+Settembre aggiunge un altro mese con tutti gli asset negativi (Govt $-2{,}1\,\%$, quattro giorni in coda). Il rapporto scende di 0,005 (giornaliero) e 0,007 (settimanale), cio\`e di circa un rumore; l'ES del Max-ratio tocca il massimo dell'anno (6,35\,\% e 6,94\,\%) e il peso azionario anche (39,6\,\% e 40,1\,\%), con il Govt al minimo (40,1\,\% e 36,3\,\%). Ottobre, positivo per Govt e IG, non cambia nulla oltre il rumore. Settembre non \`e un evento isolato come marzo: \`e l'ultimo passo del trend descritto sopra, il mese in cui i governativi perdono per la terza volta nell'anno.
+
+\section{Giornaliero contro settimanale}
+
+Le due frequenze danno metriche vicine (ES del Min-ES 3,95\,\% contro 3,78\,\%, rapporto del Max-ratio 0,171 contro 0,151 a ottobre 2026) ma pesi sistematicamente diversi. La ragione \`e nelle statistiche dei singoli asset (tabella~\ref{tab:assets}): passando da giornaliero a settimanale la deviazione standard a 60 giorni dell'IG scende del 7\,\% (da 2,02 a 1,88) e quella dell'HY sale del 7\,\% (da 3,14 a 3,36), mentre Govt e azionario scendono del 4\,\%. Due punti del campione settimanale in meno (12 settimane coprono circa 58 giorni) spiegano solo un $-1{,}7\,\%$; il resto \`e dipendenza seriale dentro la settimana, che il bootstrap giornaliero ignora e quello settimanale conserva: ritorno verso la media per l'IG, persistenza per l'HY, tipica di un mercato meno liquido in cui i prezzi degli ETF si aggiustano con ritardo. Inoltre le correlazioni con l'azionario salgono (IG--Equity da 0,28 a 0,42, HY--Equity da 0,62 a 0,70; tabella~\ref{tab:corr}), perch\'e la settimana assorbe le chiusure asincrone dei quattro fondi.
+
+Nel settimanale l'IG \`e quindi un asset pi\`u sicuro e l'HY un asset pi\`u rischioso e meno diversificante. Ne segue tutto il resto: il Min-ES settimanale esclude l'HY e concentra sull'IG; il Max-ratio settimanale tiene 18--31\,\% di IG invece di 14--20\,\%, e un po' meno Govt. Queste differenze sono strutturali e stabili nel tempo (compaiono in tutti i tredici run e in tutti i seed, a entrambi i livelli di scenari), non rumore.
+
+\section{Rendimenti realizzati}
+
+Per i dieci run con 60 giorni di borsa successivi disponibili (ottobre 2025 -- luglio 2026), la figura~\ref{fig:realised} confronta il rendimento che ogni portafoglio ha poi realizzato con il rendimento atteso e con l'ES del run. Il Min-ES ha realizzato fra $-2{,}5\,\%$ e $+2{,}4\,\%$ contro un ES di 3,7--3,9\,\%; il Max-ratio fra $-1{,}9\,\%$ e $+5{,}0\,\%$ contro un ES di 5,5--6,5\,\%. Nessuna finestra ha superato l'ES; la peggiore (giugno 2026, $-2{,}5\,\%$ per il Min-ES) \`e arrivata a due terzi dell'ES. Sono dieci finestre sovrapposte in un anno: una verifica di plausibilit\`a, non un test statistico. Il risultato \`e identico a 10\,000 scenari, perch\'e i pesi dei due livelli differiscono di pochi punti e i rendimenti realizzati sono dati, non simulazioni.
+
+\begin{figure}[htbp]\centering
+\includegraphics[width=\textwidth]{figures_100k/realised}
+\caption{Rendimento realizzato nei 60 giorni di borsa successivi a ogni data, contro rendimento atteso ed ES del run (100\,000 scenari).}
+\label{fig:realised}
+\end{figure}
+
+\section{Cosa cambia fra 10\,000 e 100\,000 scenari}
+\label{sec:cmp}
+
+\input{tables_100k_extra.tex}
+
+\paragraph{Rumore.} La tabella~\ref{tab:noise_cmp} confronta l'escursione sui sei seed a dati fissi ai due livelli. L'attesa teorica \`e una riduzione di $\sqrt{10} \approx 3{,}2$. Per le grandezze ben determinate si osserva: ES del Min-ES da 0,14 a 0,05 (giornaliero) e da 0,11 a 0,03 (settimanale), pesi del Min-ES da 4--7 punti a 1--3, ripartizione Govt/IG del Max-ratio da 23--27 punti a 4--8 (giornaliero) e da 15--17 a 6--8 (settimanale), rapporto giornaliero da 0,016 a 0,005. Due grandezze non migliorano: l'ES del Max-ratio (0,5 punti in entrambi i casi nel giornaliero) e il suo peso azionario (5 punti contro 4). Sono le coordinate del punto di massimo lungo la frontiera, e il rapporto \`e piatto in quella direzione: spostare il portafoglio ottimo di ottobre 2026 di 4 punti di azionario (presi dal Govt) cambia il rapporto di 0,0002--0,0004 e l'ES di 0,45 punti, quindi l'argmax resta sensibile al sorteggio anche quando il valore del massimo non lo \`e pi\`u. In pratica: a 100\,000 scenari l'ES del Max-ratio va letto con $\pm 0{,}25$ punti e il suo peso azionario con $\pm 2$ punti; questa incertezza non si compra con altri scenari, ma con la media su pi\`u seed.
+
+\paragraph{Conclusioni che cambiano.} Tre letture del primo esperimento non reggono al secondo:
+\begin{itemize}
+\item \emph{``I pesi del Min-ES giornaliero oscillano di 10 punti da un mese all'altro.''} Era rumore: a 100\,000 scenari oscillano di 2--4 punti, quanto cambiando seed.
+\item \emph{``La ripartizione Govt/IG del Max-ratio \`e indeterminata.''} \`E determinata entro 4--8 punti; i livelli a 10\,000 scenari (IG 1--14\,\% nel giornaliero) erano un'estrazione sfortunata.
+\item \emph{``Il rapporto del Max-ratio e il rendimento atteso del Min-ES si muovono entro il rumore.''} Si muovono di tre volte il rumore, con un profilo spiegato dai dati (picco a febbraio 2026, crollo a marzo, calo da settembre).
+\end{itemize}
+Le altre conclusioni (trend dell'azionario nel Max-ratio, ES in salita, marzo 2026, struttura giornaliero/settimanale, rendimenti realizzati) erano gi\`a corrette a 10\,000 scenari, perch\'e riguardano grandezze il cui movimento supera anche il rumore maggiore.
+
+\paragraph{Un dettaglio sui livelli.} Il run a 10\,000 scenari con seed 42 dava, a ottobre 2026, un rapporto giornaliero di 0,163; quello a 100\,000 d\`a 0,171. Non \`e un bias del numero di scenari: la media sui sei seed \`e 0,169 in entrambi i casi. Il seed 42 era, a 10\,000 scenari, un'estrazione bassa, e tutti i livelli del primo esperimento ne risentivano (rapporto, pesi Govt/IG). \`E la ragione per cui un singolo run a 10\,000 scenari non va usato per confronti fini fra date o fra frequenze.
+
+\section{Tempi di calcolo}
+\label{sec:perf}
+
+\paragraph{Un LP alla volta.} La tabella~\ref{tab:bench} d\`a i tempi dei singoli passi a dati fissi. La simulazione \`e trascurabile e cresce in modo quasi lineare (1,4 secondi a 100\,000 scenari). Gli LP no: ogni scenario aggiunge una variabile ausiliaria e un vincolo alla formulazione di Rockafellar--Uryasev, e il tempo di HiGHS cresce con un esponente di circa 1,9 nel numero di scenari, cio\`e quasi col quadrato. Passare da 10\,000 a 100\,000 scenari moltiplica il tempo di un LP per 75--90: da 0,6--0,8 secondi a 52--62. La memoria non \`e un vincolo: la matrice degli scenari occupa 3 MB a 100\,000 scenari, e il picco di memoria del processo R durante un LP a 100\,000 scenari \`e di 494 MB (misurato campionando il working set).
+
+\paragraph{Lo studio e il notebook.} Lo studio di stabilit\`a esegue 46 run (13 mesi $\times$ 2 frequenze, pi\`u 20 run con seed diversi), ciascuno con due LP: 92 LP in tutto, 66 secondi a 10\,000 scenari e 5\,622 secondi (94 minuti) a 100\,000. Il notebook del progetto esegue un run solo, ma con la frontiera: 2 + 50 LP sulla stessa matrice di scenari (la simulazione non viene ripetuta: ogni punto \`e il LP Min-ES con un vincolo in pi\`u sul rendimento atteso), pi\`u la nuvola di 3\,000 portafogli casuali e i grafici. La tabella~\ref{tab:notebook} riporta i tempi misurati passo per passo.
+
+\begin{table}[htbp]\centering\small
+\caption{Tempi misurati del notebook (secondi), stessi passi del file \texttt{Asset Allocation EUR.Rmd}, dati a ottobre 2026. ``Fissi'' = lettura dati, simulazione, statistiche, due grafici con ggplot e loro salvataggio.}\label{tab:notebook}
+\begin{tabular}{rrrrrrr}\toprule
+scenari & punti frontiera & nuvola & LP Min-ES + Max-ratio & frontiera & fissi & totale \\ \midrule
+10\,000 & 50 & 3,7 & 2,8 & 39,0 & 4,5 & 50,7 \\
+10\,000 & 20 & 3,4 & 2,5 & 14,4 & 3,1 & 24,0 \\
+100\,000 & 50 & 31,7 & 132,2 & 4\,348,7 & 6,2 & 4\,519,9 \\
+\bottomrule\end{tabular}
+\end{table}
+
+Due cose si leggono dalla tabella. La prima: a 10\,000 scenari il notebook impiega \nbTenFifty{} secondi, di cui 39 nei 50 LP della frontiera, che \`e un elemento illustrativo; i due portafogli ottimi costano meno di 3 secondi. La seconda: a 100\,000 scenari il notebook impiega 75 minuti, di cui 72 nella frontiera (87 secondi per punto: pi\`u dei 54 del punto isolato della tabella~\ref{tab:bench}, perch\'e i vincoli di rendimento vicini al massimo rendono il LP pi\`u difficile) e 32 nella nuvola casuale, mentre i due portafogli ottimi arrivano in poco pi\`u di due minuti. La frontiera \`e una curva liscia e 20 punti la disegnano quanto 50.
+
+\paragraph{Quanti scenari in dieci secondi.} Con 50 punti di frontiera il notebook sta sotto i dieci secondi solo con circa 2\,000 scenari (10,6 secondi misurati), un livello al quale il rumore sarebbe il doppio di quello a 10\,000. Il budget \`e dominato da costi fissi di circa 5 secondi, indipendenti dagli scenari: 1,5 secondi di avvio di HiGHS al primo LP e 3,5 secondi per i due grafici. Dei 5 secondi restanti, a 10\,000 scenari la nuvola di 3\,000 portafogli ne prende 4 (0,4 secondi ogni 1\,000 scenari) e la frontiera a 50 punti 39. Le leve, in ordine di efficacia, sono quindi i punti di frontiera, la dimensione della nuvola e solo per ultimo il numero di scenari: con 10 punti e 1\,000 portafogli nella nuvola si stimano circa 8\,000 scenari in dieci secondi; per i soli portafogli ottimi, senza frontiera n\'e nuvola, 10\,000 scenari costano circa 7 secondi e 15\,000 sono il limite.
+
+\paragraph{Decisione.} A valle dello studio il default del tool \`e stato lasciato a 10\,000 scenari e \texttt{N\_FRONTIER} portato da 50 a 20 (commit del 2 novembre 2026 nel repository, con notebook, README e guida aggiornati): il notebook passa da \nbTenFifty{} a \nbTenTwenty{} secondi. Per confronti fini fra date o fra frequenze, dove i pesi contano, le opzioni sono due: 100\,000 scenari (circa due minuti per i due portafogli ottimi, pi\`u \nbHundredTwenty{} per i 20 punti di frontiera), oppure la media dei pesi su sei seed a 10\,000 scenari, che costa 4 secondi per portafoglio e riduce il rumore di $\sqrt{6} \approx 2{,}4$, circa quanto 50\,000 scenari; la media dei pesi non \`e esattamente un ottimo, ma nella valle piatta la differenza \`e trascurabile (tabella~\ref{tab:cross}), e l'escursione fra i seed \`e di per s\'e un'informazione utile da riportare.
+
+\section{Elenco dei cambiamenti maggiori e loro giustificazione}
+
+\begin{enumerate}
+\item \textbf{Peso azionario del Max-ratio da 31,5 a 39\,\% (giornaliero) e da 29,5 a 39,5\,\% (settimanale), governativi da 49 a 41\,\% e da 40 a 35\,\%, ES da 5,5 a 6,3\,\% e da 5,7 a 6,9\,\%.} Genuino (escursioni di 2--3 volte il rumore, andamento monotono): rendimento atteso dell'azionario in salita e governativi con rendimento in calo nel 2026. Il rapporto a fine anno \`e dov'era: il portafoglio migliore \`e diventato pi\`u rischioso, non peggiore.
+\item \textbf{Rapporto del Max-ratio in calo di 0,015 (giornaliero) e 0,016 (settimanale) a marzo 2026.} Genuino ma transitorio: correzione simultanea di tutti gli asset, 2--4\,\% di osservazioni in coda in pi\`u; riassorbito da aprile a giugno.
+\item \textbf{Rendimento atteso del Min-ES da 0,47 a 0,42\,\% (giornaliero) e da 0,42 a 0,36\,\% (settimanale), con picco a febbraio 2026.} Genuino (tre e sei volte il rumore): tre mesi negativi per i governativi, che sono met\`a (giornaliero) o un quarto (settimanale) del portafoglio.
+\item \textbf{Pesi del Min-ES.} Nessun cambiamento maggiore: escursioni di 2--4 punti, dell'ordine del rumore. Il salto di 10 punti fra gennaio e febbraio 2026 visto con 10\,000 scenari era rumore Monte Carlo nella valle piatta dell'ES.
+\item \textbf{Ripartizione Govt/IG nel Max-ratio.} Determinata entro 5--8 punti; l'indeterminazione di 15--25 punti vista con 10\,000 scenari era rumore. Il trend dei governativi (punto 1) \`e reale; l'IG \`e fermo.
+\item \textbf{Esclusione di HY e azionario dal Min-ES settimanale.} Strutturale: dipende dalla frequenza, non dalla data n\'e dal seed.
+\end{enumerate}
+
+\section{Conclusioni e indicazioni d'uso}
+
+\begin{itemize}
+\item Il tool \`e stabile: con 100\,000 scenari, ES, rendimento atteso, rapporto e pesi dei portafogli ottimi si muovono nell'anno quanto si muovono cambiando seed, salvo i cambiamenti che i dati giustificano (azionario che guadagna peso sui governativi nel Max-ratio, rendimento atteso in calo nel Min-ES, il mese di marzo 2026).
+\item Con 10\,000 scenari, il default del tool, le metriche sono gi\`a affidabili e i cambiamenti grandi si vedono; met\`a delle oscillazioni dei pesi \`e per\`o rumore Monte Carlo, e un singolo run pu\`o essere un'estrazione sfortunata: il run con seed 42 sottostimava il rapporto di 0,006 e l'IG del Max-ratio di circa 10 punti. A quel livello i pesi vanno letti insieme alla forma della superficie, e dove questa \`e piatta (Govt contro IG) il singolo numero \`e un'estrazione da un intervallo.
+\item Il costo degli scenari cresce col quadrato; quello della frontiera \`e lineare nei punti ed \`e la voce dominante del notebook. Per questo il default resta 10\,000 scenari con 20 punti di frontiera; per i confronti fini si usano 100\,000 scenari o la media su pi\`u seed.
+\item La posizione del Max-ratio lungo la frontiera (ES e peso azionario) resta rumorosa anche a 100\,000 scenari, perch\'e il rapporto \`e piatto attorno al massimo: va riportata con un intervallo ($\pm 0{,}25$ punti di ES, $\pm 2$ punti di azionario).
+\item La scelta della frequenza non \`e neutra: il settimanale conserva la dipendenza dentro la settimana e penalizza l'HY, il giornaliero ha cinque volte pi\`u punti di supporto. Il Min-ES settimanale \`e il pi\`u stabile dei quattro portafogli; il Max-ratio giornaliero ha il rapporto pi\`u alto. Conviene dichiarare la frequenza insieme ai risultati e, se si confrontano le due, confrontare le metriche e non i pesi.
+\end{itemize}
+
+\appendix
+\section{Tabelle di dettaglio, 100\,000 scenari}
+
+\input{tables_100k_detail.tex}
+
+\end{document}

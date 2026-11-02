@@ -1,0 +1,28 @@
+\begin{table}[htbp]\centering\small\setlength{\tabcolsep}{3.5pt}
+\caption{Rumore Monte Carlo: escursione su 6 seed a dati fissi (30 ott 2026) con 10\,000 e con 100\,000 scenari. Metriche in \%, pesi in punti percentuali.}\label{tab:noise_cmp}
+\begin{tabular}{lrrrr}\toprule
+grandezza & \multicolumn{2}{c}{giornaliero} & \multicolumn{2}{c}{settimanale} \\
+ & 10k & 100k & 10k & 100k \\ \midrule
+Min-ES: ES 95\,\% & 0.14 & 0.05 & 0.11 & 0.03 \\
+Min-ES: E[R] & 0.04 & 0.03 & 0.03 & 0.01 \\
+Max-ratio: rapporto & 0.016 & 0.005 & 0.006 & 0.006 \\
+Max-ratio: ES 95\,\% & 0.48 & 0.51 & 0.60 & 0.41 \\
+Min-ES: peso Govt & 4.1 & 1.8 & 7.0 & 1.4 \\
+Min-ES: peso IG & 6.8 & 2.6 & 7.0 & 1.4 \\
+Min-ES: peso HY & 4.3 & 2.3 & 0.0 & 0.0 \\
+Min-ES: peso Equity & 1.5 & 0.8 & 0.0 & 0.0 \\
+Max-ratio: peso Govt & 22.6 & 4.2 & 17.0 & 5.8 \\
+Max-ratio: peso IG & 27.3 & 6.1 & 14.8 & 7.9 \\
+Max-ratio: peso HY & 0.0 & 0.0 & 0.0 & 0.0 \\
+Max-ratio: peso Equity & 5.0 & 3.9 & 4.4 & 4.0 \\
+\bottomrule\end{tabular}\end{table}
+
+\begin{table}[htbp]\centering\footnotesize\setlength{\tabcolsep}{4pt}
+\caption{Tempi di calcolo (secondi, minimo di due ripetizioni) al variare del numero di scenari; dati a ott 2026, rendimenti giornalieri. LP del notebook = simulazione + due LP + 20 punti di frontiera, senza nuvola casuale e grafici.}\label{tab:bench}
+\begin{tabular}{rrrrrrr}\toprule
+scenari & simulazione & LP Min-ES & LP Max-ratio & punto frontiera & LP del notebook & scenari (MB) \\ \midrule
+10\,000 & 0.08 & 0.6 & 0.8 & 0.6 & 13 & 0.3 \\
+25\,000 & 0.23 & 3.2 & 3.7 & 3.6 & 79 & 0.8 \\
+50\,000 & 0.70 & 14.4 & 15.4 & 17.0 & 371 & 1.5 \\
+100\,000 & 1.42 & 51.8 & 61.5 & 53.8 & 1190 & 3.1 \\
+\bottomrule\end{tabular}\end{table}

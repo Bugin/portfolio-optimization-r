@@ -101,6 +101,7 @@ R/                          # parameters, data, simulation, metrics, optimisatio
 tests/                      # testthat suite, verify_real_data.R, cross_check/ fixtures
 figures/                    # frontier.png, distributions.png
 docs/                       # project-guide.pdf (and .tex): theory, methodology and code walkthrough; specs/
+docs/stability/              # stability study (Nov 2026, in Italian): 13 monthly re-runs, 10k vs 100k scenarios, timings; PDF + scripts + CSVs
 ```
 
 `R/all.R` sources the other files in order; the `.Rmd` calls it from the
